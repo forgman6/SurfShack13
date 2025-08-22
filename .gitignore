@@ -25,6 +25,8 @@
 # Ignore compiled linux libs in the root folder, e.g. librust_g.so
 /*.so
 
+# Ignore compiled linux in pipes folder
+
 #Ignore compiled files and other files generated during compilation.
 *.mdme
 *.mdme.*
