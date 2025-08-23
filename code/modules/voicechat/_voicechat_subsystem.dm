@@ -93,7 +93,7 @@ SUBSYSTEM_DEF(voicechat)
 
 /datum/controller/subsystem/voicechat/proc/post_confirm(userCode)
 	//move_user to zlevel as default room
-	var/client/C is userCode_client_map[userCode]
+	var/client/C = userCode_client_map[userCode]
 	var/mob/M = C.mob
 	var/room = "[M.z]"
 	move_userCode_to_room(userCode, room)

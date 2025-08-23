@@ -68,8 +68,9 @@
 		send_json(alist(cmd="disconnect", userCode=userCode))
 
 
-// quick and dirty stuff for test merge
+// quick and DIRTY stuff for test play
 /mob/living/verb/join_vc()
+	to_chat(mob, span_info("This should open up your webbrowser and give you a warning about a bad certificate. ignore and continue to the site, then allow mic perms. If your having issues please tell us what OS and browser you are using, if you use a VPN, and send a screenshot of your browser console to us."))
 	if(!SSvoicechat)
 		to_chat(src, span_warning("wait until voicechat initialized! {SSvoicechat: [SSvoicechat || "null"]}"))
 		return
@@ -86,7 +87,7 @@
 
 
 /mob/living/proc/move_to_normal_room()
-	if(!SSvoicechat || !client)
+	if(!SSvoicechat || !client || STAT)
 		return
 	var/userCode = SSvoicechat.client_userCode_map[ref(client)]
 	SSvoicechat.move_userCode_to_room(userCode, "[src.z]")
