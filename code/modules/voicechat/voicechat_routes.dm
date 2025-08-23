@@ -1,3 +1,5 @@
+//uncomment to show traffic
+// #define LOG_TRAFFIC
 //ensure its atleast compiled right
 /datum/controller/subsystem/voicechat/proc/test_library()
 	var/text = "hello word"
@@ -21,35 +23,30 @@
     #endif
     call_ext(src.lib_path, "byond:SendJSON")(json)
 
+/datum/controller/subsystem/voicechat/proc/handle_topic(T)
+    var/list/data = json_decode(T)
+    if(data["error"])
+        world.log << T
+        return
 
-// world/Topic(T, Addr, Master, Keys)
-//     if(Addr != "127.0.0.1")
-//         return
-//     . = ..()
+    #ifdef LOG_TRAFFIC
+    world.log << "NODE: [T]"
+    #endif
 
-//     var/list/data = json_decode(T)
-//     if(data["error"])
-//         world.log << T
-//         return
+    if(data["server_ready"])
+        handshaked()
+        return
 
-//     #ifdef LOG_TRAFFIC
-//     world.log << "NODE: [T]"
-//     #endif
+    if(data["pong"])
+        world.log << "started: [data["time"]] round trip: [world.timeofday] approx: [world.timeofday -  data["time"]] x 1/10 seconds, data: [data["pong"]]"
+        return
 
-//     if(data["server_ready"])
-//         SSVOICE.handshaked()
-//         return
+    if(data["confirmed"])
+        confirm_userCode(data["confirmed"])
+        return
 
-//     if(data["pong"])
-//         world << "started: [data["time"]] round trip: [world.timeofday] approx: [world.timeofday -  data["time"]] x 1/10 seconds, data: [data["pong"]]"
-//         return
-
-//     if(data["confirmed"])
-//         SSVOICE.confirm_userCode(data["confirmed"])
-//         return
-
-//     if(data["voice_activity"])
-//         SSVOICE.toggle_active(data["voice_activity"], data["active"])
-//         return
-//     if(data["disconnect"])
-//         SSVOICE.disconnect(userCode= data["disconnect"])
+    if(data["voice_activity"])
+        toggle_active(data["voice_activity"], data["active"])
+        return
+    if(data["disconnect"])
+        disconnect(userCode= data["disconnect"])

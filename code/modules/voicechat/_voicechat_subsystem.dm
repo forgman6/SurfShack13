@@ -17,7 +17,7 @@ SUBSYSTEM_DEF(voicechat)
 	// usercode to room
 	var/list/userCode_room_map = alist()
 	//subsystem "defines"
-
+	var/handshaked = FALSE
 	//which port to run the node websockets
 	var/const/node_port = 3000
 	//node server path
@@ -27,6 +27,11 @@ SUBSYSTEM_DEF(voicechat)
 
 /datum/controller/subsystem/voicechat/fire()
 	send_locations()
+
+//shit you want byond to do after establishing communication
+/datum/controller/subsystem/voicechat/proc/handshaked()
+	handshaked = TRUE
+	return
 
 /datum/controller/subsystem/voicechat/proc/add_rooms(list/rooms, zlevel_mode = FALSE)
 	if(!islist(rooms))
