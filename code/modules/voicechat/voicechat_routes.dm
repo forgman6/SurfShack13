@@ -6,7 +6,7 @@
 	var/out = call_ext(src.lib_path, "byond:Echo")(text)
 	var/confirmed = (out == text)
 	ASSERT(confirmed, "byondsocket library: [src.lib_path] not found or working {out: [out || "null"]}")
-	return out
+	return confirmed
 
 /proc/json_encode_sanitize(list/data)
 	. = json_encode(data)
