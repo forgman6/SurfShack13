@@ -40,11 +40,7 @@
 
 	// until LummoxJR gives us a usable web browser with microphone access,
 	// we use an external browser
-	#ifdef DEBUG
-	src << link("https://localhost:[src.node_port]?sessionId=[sessionId]")
-	#else
-	src << link("https://[world.internet_address]:[src.node_port]?sessionId=[sessionId]")
-	#endif
+	M << link("https://[world.internet_address]:[src.node_port]?sessionId=[sessionId]")
 	var/list/paramstuff = alist(cmd="register", userCode= userCode, sessionId= sessionId)
 	send_json(paramstuff)
 	link_userCode_client(userCode, C)
@@ -70,3 +66,28 @@
 
 	if(from_byond)
 		send_json(alist(cmd="disconnect", userCode=userCode))
+
+
+// quick and dirty stuff for test merge
+/mob/living/verb/join_vc()
+	if(!SSvoicechat)
+		to_chat(src, span_warning("wait until voicechat initialized! {SSvoicechat: [SSvoicechat || "null"]}"))
+		return
+	SSvoicechat.join_vc(src)
+	RegisterSignal(src, COMSIG_LIVING_DEATH, PROC_REF(move_to_ghost_room))
+	RegisterSignal(src, COMSIG_LIVING_REVIVE, PROC_REF(move_to_normal_room))
+	RegisterSignal(src, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(move_to_normal_room))
+
+/mob/living/proc/move_to_ghost_room()
+	if(!SSvoicechat || !client)
+		return
+	var/userCode = SSvoicechat.client_userCode_map[ref(client)]
+	SSvoicechat.move_userCode_to_room(userCode, "ghost")
+
+
+/mob/living/proc/move_to_normal_room()
+	if(!SSvoicechat || !client)
+		return
+	var/userCode = SSvoicechat.client_userCode_map[ref(client)]
+	SSvoicechat.move_userCode_to_room(userCode, "[src.z]")
+

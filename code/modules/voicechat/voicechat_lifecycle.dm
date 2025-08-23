@@ -2,11 +2,12 @@
 
 /datum/controller/subsystem/voicechat/Initialize()
 	. = ..()
-	test_library()
+	if(!test_library())
+		return SS_INIT_FAILURE
 	add_rooms(rooms_to_add)
 	add_zlevels()
 	start_node()
-
+	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/voicechat/proc/start_node()
 	// used for topic calls

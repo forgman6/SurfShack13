@@ -16,14 +16,15 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/current_rooms = alist()
 	// usercode to room
 	var/list/userCode_room_map = alist()
-	//subsystem "defines"
+	// if the server and node have successfully communicated
 	var/handshaked = FALSE
+	//subsystem "defines"
 	//which port to run the node websockets
 	var/const/node_port = 3000
 	//node server path
 	var/const/node_path = "voicechat/node/server/main.js"
 	//library path
-	var/const/lib_path = "voicechat/pipes/pipes.so"
+	var/const/lib_path = "voicechat/pipes/byondsocket.so"
 
 /datum/controller/subsystem/voicechat/fire()
 	send_locations()
@@ -55,8 +56,8 @@ SUBSYSTEM_DEF(voicechat)
 
 
 /datum/controller/subsystem/voicechat/proc/move_userCode_to_room(userCode, room)
-	if(!room || !current_rooms.Find(room))
-		return
+	// if(!room || !current_rooms.Find(room))
+	// 	return
 
 	var/own_room = userCode_room_map[userCode]
 	if(own_room)
@@ -92,20 +93,9 @@ SUBSYSTEM_DEF(voicechat)
 
 /datum/controller/subsystem/voicechat/proc/post_confirm(userCode)
 	//move_user to zlevel as default room
-	var/client/C = userCode_client_map[userCode]
-	if(!C)
-		return
+	var/client/C is userCode_client_map[userCode]
 	var/mob/M = C.mob
-	if(!M)
-		return
-	var/room
-	switch(M.stat)
-		if(CONSCIOUS to SOFT_CRIT)
-			room = num2text(M.z)
-		if(UNCONSCIOUS to HARD_CRIT)
-			return
-		if(DEAD)
-			room = "ghost"
+	var/room = "[M.z]"
 	move_userCode_to_room(userCode, room)
 
 /datum/controller/subsystem/voicechat/proc/send_locations()

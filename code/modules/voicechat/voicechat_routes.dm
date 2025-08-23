@@ -4,8 +4,9 @@
 /datum/controller/subsystem/voicechat/proc/test_library()
 	var/text = "hello word"
 	var/out = call_ext(src.lib_path, "byond:Echo")(text)
-	ASSERT(out = text, "byondsocket library: [src.lib_path] not found or working {out: [out || "null"]}")
-
+    var/confirmed = (out == text)
+	ASSERT(confirmed, "byondsocket library: [src.lib_path] not found or working {out: [out || "null"]}")
+    return out
 
 /proc/json_encode_sanitize(list/data)
     . = json_encode(data)

@@ -251,3 +251,8 @@ define_sanity_output.txt
 # Running OpenDream locally
 tgstation.json
 rust_g64.dll
+
+#voicechat stuff
+voicechat/node/package-lock.json
+voicechat/pipes/*.so
+voicechat/node/node_modules/
