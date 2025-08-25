@@ -1,12 +1,3 @@
-/datum/controller/subsystem/voicechat
-	// Maps for tracking user connections
-	var/list/userCode_client_map = list() // userCode -> client ref
-	var/list/client_userCode_map = list() // client ref -> userCode
-	var/list/userCode_room_map = list()   // userCode -> room
-	var/list/vc_clients = list()          // Active voice chat users
-	var/list/current_rooms = list()       // Room -> list of userCodes
-	var/node_port                         // Port for external browser connection
-
 // Toggles the speaker overlay for a user
 /datum/controller/subsystem/voicechat/proc/toggle_active(userCode, is_active)
 	if(!userCode || isnull(is_active))
