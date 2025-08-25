@@ -77,26 +77,7 @@ SUBSYSTEM_DEF(voicechat)
 	world.log << "registered userCode:[userCode] to client_ref:[client_ref]"
 
 
-//called with both browser is paired and mic access granted
-/datum/controller/subsystem/voicechat/proc/confirm_userCode(userCode)
-	if(!userCode || (userCode in vc_clients))
-		return
 
-	// sanity check
-	if(!locate(userCode_client_map[userCode]))
-		return
-
-	vc_clients += userCode
-	world.log << "confirmed [userCode]"
-	post_confirm(userCode)
-
-
-/datum/controller/subsystem/voicechat/proc/post_confirm(userCode)
-	//move_user to zlevel as default room
-	var/client/C = userCode_client_map[userCode]
-	var/mob/M = C.mob
-	var/room = "[M.z]"
-	move_userCode_to_room(userCode, room)
 
 /datum/controller/subsystem/voicechat/proc/send_locations()
 	var/list/params = alist(cmd = "loc")
@@ -119,6 +100,9 @@ SUBSYSTEM_DEF(voicechat)
 		// CRASH("no client or wrong type")
 		return
 	. = copytext(md5("[C.computer_id][C.address][rand()]"),-4)
+	//ensure unique
+	while(. in userCode_client_map)
+		. = copytext(md5("[C.computer_id][C.address][rand()]"),-4)
 	return .
 
 

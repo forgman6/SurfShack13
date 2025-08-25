@@ -1,5 +1,10 @@
 ### BUILDING
 I dont understand juke build so you will have to run a few commands manually.
+*  or all at once: **run from project root**
+	```bash
+	sudo apt install g++-multilib npm -y && cd voicechat/pipes && make && cd ../node && npm install && cd ../..
+	```
+
 1. ensure you have **g++-multilib** and **npm** installed
 	* `sudo apt install g++-multilib npm -y`
 2. build **byondsocket.so** library
@@ -13,20 +18,20 @@ I dont understand juke build so you will have to run a few commands manually.
 4. verify it worked
 	* to **test node**, run `node voicechat/node/server/main.js`
 	* if it worked it should run but with message about missing arguements
-	```
-	HTTPS server running on port undefined
-	socket server listening on /tmp/byond_node.sock
-	Failed to send command: The "options" or "port" or "path" argument must be specified
-	```
+		```
+		HTTPS server running on port undefined
+		socket server listening on /tmp/byond_node.sock
+		Failed to send command: The "options" or "port" or "path" argument must be specified
+		```
 	* to **verify the library** you can do `ldd byondsocket.so`
 	and it should return something along the lines of (with different numbers):
-	```
-	linux-gate.so.1 (0x111111)
-	libgcc_s.so.1 => /lib/i386-linux-gnu/libgcc_s.so.1 (0123546)
-	libc.so.6 => /lib/i386-linux-gnu/libc.so.6 (0x1234567)
-	/lib/ld-linux.so.2 (0x42069)
-	```
-	* additionally you can use debug mode while running the game to see if the library is compiles right.
+		```
+		linux-gate.so.1 (0x111111)
+		libgcc_s.so.1 => /lib/i386-linux-gnu/libgcc_s.so.1 (0123546)
+		libc.so.6 => /lib/i386-linux-gnu/libc.so.6 (0x1234567)
+		/lib/ld-linux.so.2 (0x42069)
+		```
+	* additionally you can use debug mode while running the game to see if the library is compiled right.
 5. If your too retarded to follow this (no worries man), or you cant figure out what went wrong you can contact **a_forg** on discord.
 
 
