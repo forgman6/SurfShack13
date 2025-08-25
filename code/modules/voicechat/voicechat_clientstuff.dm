@@ -7,7 +7,10 @@
 		return
 	var/atom/movable/M = C.mob
 	var/image/speaker = image('icons/hud/voicechat/speaker.dmi', M, pixel_y = 32, pixel_x = 8)
-	M.overlays = is_active ? M.overlays + speaker : M.overlays - speaker
+	if(is_active)
+		M.overlays += speaker
+	else
+		M.overlays -= speaker
 
 // Mutes or deafens a user's microphone
 /datum/controller/subsystem/voicechat/proc/mute_mic(client/C, deafen = FALSE)
@@ -75,10 +78,10 @@
 		COMSIG_LIVING_REVIVE,
 		COMSIG_LIVING_STATUS_UNCONSCIOUS
 	)
-	RegisterSignal(M, signals, PROC_REF(room_update))
+	RegisterSignals(M, signals, PROC_REF(room_update), override = TRUE)
 	if(M.mind)
-		RegisterSignal(M.mind, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, PROC_REF(on_mind_change))
-	RegisterSignal(C, COMSIG_CLIENT_MOB_LOGIN, PROC_REF(on_mob_change))
+		RegisterSignal(M.mind, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, PROC_REF(on_mind_change), override = TRUE)
+	RegisterSignal(C, COMSIG_CLIENT_MOB_LOGIN, PROC_REF(on_mob_change), override = TRUE)
 
 // Handles mob change for a client
 /datum/controller/subsystem/voicechat/proc/on_mob_change(client/source, mob/M)
@@ -152,7 +155,7 @@
 
 
 /mob/verb/join_vc()
-	src << browse(@'<html><h2>proximity chat</h2> <p>this command should open an external broswer, ignore the bad cert and continue onto the site. when prompted, allow mic perms and then you should be set up. Verify this is working by looking for a speaker overlay over your mob ingame</p> <h4>issues</h4> <p>to try to solve yourself, ensure browser extensions are off and if you are using a vpn, try without. additionally try running on firefox as thats usually works best</p> <h4>reporting bugs</h4> <p> If your having issues please tell us what OS and browser you are using, if you use a VPN, and send a screenshot of your browser console to us (ctrl + shift + I). </p> <h4>contact</h4> <p>a_forg on discord</p> <img src="https://files.catbox.moe/mkz9tv.png"></html>')
+	src << browse(@'<html><h2>proximity chat</h2> <p>this command should open an external broswer, ignore the bad cert and continue onto the site. when prompted, allow mic perms and then you should be set up. Verify this is working by looking for a speaker overlay over your mob ingame</p> <h4>issues</h4> <p>to try to solve yourself, ensure browser extensions are off and if you are using a vpn, try without. additionally try running on firefox as thats usually works best</p> <h4>reporting bugs</h4> <p> If your having issues please tell us what OS and browser you are using, if you use a VPN, and send a screenshot of your browser console to us (ctrl + shift + I). </p> <h4>contact</h4> <p>a_forg on discord</p> <img src="https://files.catbox.moe/mkz9tv.png"></html>', "window=voicechat_help")
 	if(SSvoicechat)
 		SSvoicechat.join_vc(client)
 
