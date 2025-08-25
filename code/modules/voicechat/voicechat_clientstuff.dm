@@ -19,10 +19,10 @@
 	M.overlays = is_active ? M.overlays + speaker : M.overlays - speaker
 
 // Mutes or deafens a user's microphone
-/datum/controller/subsystem/voicechat/proc/mute_mic(mob_ref, deafen = FALSE)
-	if(!mob_ref)
+/datum/controller/subsystem/voicechat/proc/mute_mic(client/C, deafen = FALSE)
+	if(!C)
 		return
-	var/userCode = client_userCode_map["\ref[mob_ref]"]
+	var/userCode = client_userCode_map[ref(C)]
 	if(!userCode)
 		return
 	send_json(list(
@@ -35,7 +35,7 @@
 	if(!C)
 		return
 	// Disconnect existing session if present
-	var/existing_userCode = client_userCode_map["\ref[C]"]
+	var/existing_userCode = client_userCode_map[ref(C)]
 	if(existing_userCode)
 		disconnect(existing_userCode, from_byond = TRUE)
 
@@ -47,15 +47,15 @@
 
 	// Open external browser with voice chat link
 	C << link("https://[world.internet_address]:[node_port]?sessionId=[sessionId]")
-	send_json(list(
-		"cmd" = "register",
-		"userCode" = userCode,
-		"sessionId" = sessionId
+	send_json(alist(
+		cmd = "register",
+		userCode = userCode,
+		sessionId = sessionId
 	))
 
 	// Link client to userCode
-	userCode_client_map[userCode] = "\ref[C]"
-	client_userCode_map["\ref[C]"] = userCode
+	userCode_client_map[userCode] = ref(C)
+	client_userCode_map[ref(C)] = userCode
 	// Confirmation handled in confirm_userCode
 
 // Confirms userCode when browser and mic access are granted
@@ -86,7 +86,7 @@
 	)
 	RegisterSignal(M, signals, PROC_REF(room_update))
 	if(M.mind)
-		RegisterSignal(M.mind, COMSIG_MOB_MIND_TRANSFERRED_OUT, PROC_REF(on_mind_change))
+		RegisterSignal(M.mind, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, PROC_REF(on_mind_change))
 	RegisterSignal(C, COMSIG_CLIENT_MOB_LOGIN, PROC_REF(on_mob_change))
 
 // Handles mob change for a client
@@ -99,7 +99,7 @@
 	)
 	RegisterSignal(M, signals, PROC_REF(room_update))
 	if(M.mind)
-		RegisterSignal(M.mind, COMSIG_MOB_MIND_TRANSFERRED_OUT, PROC_REF(on_mind_change))
+		RegisterSignal(M.mind, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, PROC_REF(on_mind_change))
 	room_update(M)
 
 // Handles mind transfer to update voice chat
@@ -107,18 +107,19 @@
 	var/mob/M = source.current
 	if(!M)
 		var/client/C = old_mob.client
-		var/userCode = client_userCode_map["\ref[C]"]
+		var/userCode = client_userCode_map[ref(C)]
 		if(!C || !userCode)
 			return
 		disconnect(userCode, from_byond = TRUE)
 		return
-	UnregisterSignal(old_mob, COMSIG_MOB_MIND_TRANSFERRED_OUT)
+	UnregisterSignal(old_mob, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF)
 	room_update(M)
 
 // Updates the voice chat room based on mob status
 /datum/controller/subsystem/voicechat/proc/room_update(mob/source)
+	world.log << "room_update called"
 	var/client/C = source.client
-	var/userCode = client_userCode_map["\ref[C]"]
+	var/userCode = client_userCode_map[ref(C)]
 	if(!C || !userCode)
 		UnregisterSignal(source, list(
 			COMSIG_MOVABLE_Z_CHANGED,
@@ -158,30 +159,18 @@
 	if(from_byond)
 		send_json(list("cmd" = "disconnect", "userCode" = userCode))
 
-// Verb for players to join voice chat
-/mob/living/verb/join_voice_chat()
-	set name = "Join Voice Chat"
-	set category = "OOC"
 
-	if(!SSvoicechat)
-		to_chat(src, span_warning("Voice chat subsystem not initialized!"))
-		return
+/mob/verb/join_vc()
+	src << browse(@'<html><h2>proximity chat</h2> <p>this command should open an external broswer, ignore the bad cert and continue onto the site. when prompted, allow mic perms and then you should be set up. Verify this is working by looking for a speaker overlay over your mob ingame</p> <h4>issues</h4> <p>to try to solve yourself, ensure browser extensions are off and if you are using a vpn, try without. additionally try running on firefox as thats usually works best</p> <h4>reporting bugs</h4> <p> If your having issues please tell us what OS and browser you are using, if you use a VPN, and send a screenshot of your browser console to us (ctrl + shift + I). </p> <h4>contact</h4> <p>a_forg on discord</p> <img src="https://files.catbox.moe/mkz9tv.png"></html>')
+	if(SSvoicechat)
+		SSvoicechat.join_vc(client)
 
-	to_chat(src, span_info("Opening voice chat in your browser. Ignore any certificate warnings, allow microphone permissions, and report issues with your OS, browser, VPN usage, and browser console screenshot."))
-	SSvoicechat.join_vc(client)
 
-	RegisterSignal(src, list(
-		COMSIG_LIVING_DEATH,
-		COMSIG_LIVING_REVIVE,
-		COMSIG_MOVABLE_Z_CHANGED
-	), PROC_REF(update_voice_room))
+/mob/verb/mute()
+	if(SSvoicechat)
+		SSvoicechat.mute_mic(client)
 
-// Updates voice room based on mob status
-/mob/living/proc/update_voice_room()
-	if(!SSvoicechat || !client)
-		return
-	var/userCode = SSvoicechat.client_userCode_map["\ref[client]"]
-	if(!userCode)
-		return
-	var/room = (stat == DEAD) ? "ghost" : "[z]"
-	SSvoicechat.move_userCode_to_room(userCode, room)
+
+/mob/verb/deafen()
+	if(SSvoicechat)
+		SSvoicechat.mute_mic(client, deafen=TRUE)
