@@ -1,121 +1,145 @@
+/datum/controller/subsystem/voicechat
+	// Maps for tracking user connections
+	var/list/userCode_client_map = list() // userCode -> client ref
+	var/list/client_userCode_map = list() // client ref -> userCode
+	var/list/userCode_room_map = list()   // userCode -> room
+	var/list/vc_clients = list()          // Active voice chat users
+	var/list/current_rooms = list()       // Room -> list of userCodes
+	var/node_port                         // Port for external browser connection
+
+// Toggles the speaker overlay for a user
 /datum/controller/subsystem/voicechat/proc/toggle_active(userCode, is_active)
 	if(!userCode || isnull(is_active))
-		// CRASH("null params {userCode: [userCode || "null"], is_active: [is_active || "null"]}")
 		return
 	var/client/C = locate(userCode_client_map[userCode])
-	var/atom/M = C.mob
-	var/image/speaker = image('icons/hud/voicechat/speaker.dmi', pixel_y=32, pixel_x=8)
-	if(is_active)
-		M.overlays += speaker
-	else
-		M.overlays -= speaker
+	if(!C)
+		return
+	var/atom/movable/M = C.mob
+	var/image/speaker = image('icons/hud/voicechat/speaker.dmi', M, pixel_y = 32, pixel_x = 8)
+	M.overlays = is_active ? M.overlays + speaker : M.overlays - speaker
 
-// cant unmute from ingame for security reasons
-/datum/controller/subsystem/voicechat/proc/mute_mic(mob_ref, deafen=FALSE)
+// Mutes or deafens a user's microphone
+/datum/controller/subsystem/voicechat/proc/mute_mic(mob_ref, deafen = FALSE)
 	if(!mob_ref)
 		return
-	var/userCode = client_userCode_map[mob_ref]
+	var/userCode = client_userCode_map["\ref[mob_ref]"]
 	if(!userCode)
 		return
-	var/params = alist(cmd = deafen ? "deafen" : "mute_mic", userCode = userCode)
-	send_json(params)
+	send_json(list(
+		"cmd" = deafen ? "deafen" : "mute_mic",
+		"userCode" = userCode
+	))
 
-
+// Connects a client to voice chat via an external browser
 /datum/controller/subsystem/voicechat/proc/join_vc(client/C)
 	if(!C)
 		return
-	//check if client already connected
-	var/check_userCode = client_userCode_map[ref(C)]
-	if(check_userCode)
-		disconnect(check_userCode, from_byond= TRUE)
+	// Disconnect existing session if present
+	var/existing_userCode = client_userCode_map["\ref[C]"]
+	if(existing_userCode)
+		disconnect(existing_userCode, from_byond = TRUE)
 
-	//so we want something somewhat random as the player can modify this easily
+	// Generate unique session and user codes
 	var/sessionId = md5("[world.time][rand()][world.realtime][rand(0,9999)][C.address][C.computer_id]")
-	//the user code cant be modified because its associated session id server side, so its somewhat secure.
 	var/userCode = generate_userCode(C)
 	if(!userCode)
 		return
-	// until LummoxJR gives us a usable web browser with microphone access,
-	// we use an external browser
-	C << link("https://[world.internet_address]:[src.node_port]?sessionId=[sessionId]")
-	var/list/paramstuff = alist(cmd="register", userCode= userCode, sessionId= sessionId)
-	send_json(paramstuff)
-	link_userCode_client(userCode, C)
-	/// once page is loaded and user allows mic perms, confirm_userCode gets called
 
-//called with both browser is paired and mic access granted
+	// Open external browser with voice chat link
+	C << link("https://[world.internet_address]:[node_port]?sessionId=[sessionId]")
+	send_json(list(
+		"cmd" = "register",
+		"userCode" = userCode,
+		"sessionId" = sessionId
+	))
+
+	// Link client to userCode
+	userCode_client_map[userCode] = "\ref[C]"
+	client_userCode_map["\ref[C]"] = userCode
+	// Confirmation handled in confirm_userCode
+
+// Confirms userCode when browser and mic access are granted
 /datum/controller/subsystem/voicechat/proc/confirm_userCode(userCode)
 	if(!userCode || (userCode in vc_clients))
 		return
-
-	// sanity check
-	if(!locate(userCode_client_map[userCode]))
+	var/client_ref = userCode_client_map[userCode]
+	if(!client_ref)
 		return
 
 	vc_clients += userCode
-	world.log << "confirmed [userCode]"
+	log_world("Voice chat confirmed for userCode: [userCode]")
 	post_confirm(userCode)
 
-
+// Sets up signals for a confirmed voice chat user
 /datum/controller/subsystem/voicechat/proc/post_confirm(userCode)
-	//move_user to zlevel as default room
-	var/client/C = userCode_client_map[userCode]
-	var/mob/M = C.mob
-	if(!C || !M)
-		disconnect(userCode, from_byond= TRUE)
+	var/client/C = locate(userCode_client_map[userCode])
+	if(!C || !C.mob)
+		disconnect(userCode, from_byond = TRUE)
 		return
-	// there is no explicit signal when a client switches mob, so check client.mob everytime
-	RegisterSignal(M, COMSIG_MOVABLE_Z_CHANGED, COMSIG_LIVING_DEATH, COMSIG_LIVING_REVIVE, COMSIG_LIVING_STATUS_UNCONSCIOUS, PROC_REF(room_update))
-	var/datum/mind/mind = M.mind
-	if(mind)
-		RegisterSignal(mind, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, PROC_REF(on_mind_change))
 
+	var/mob/M = C.mob
+	var/list/signals = list(
+		COMSIG_MOVABLE_Z_CHANGED,
+		COMSIG_LIVING_DEATH,
+		COMSIG_LIVING_REVIVE,
+		COMSIG_LIVING_STATUS_UNCONSCIOUS
+	)
+	RegisterSignal(M, signals, PROC_REF(room_update))
+	if(M.mind)
+		RegisterSignal(M.mind, COMSIG_MOB_MIND_TRANSFERRED_OUT, PROC_REF(on_mind_change))
 	RegisterSignal(C, COMSIG_CLIENT_MOB_LOGIN, PROC_REF(on_mob_change))
 
+// Handles mob change for a client
 /datum/controller/subsystem/voicechat/proc/on_mob_change(client/source, mob/M)
-	RegisterSignal(M, COMSIG_MOVABLE_Z_CHANGED, COMSIG_LIVING_DEATH, COMSIG_LIVING_REVIVE, COMSIG_LIVING_STATUS_UNCONSCIOUS, PROC_REF(room_update))
-	var/datum/mind/mind = M.mind
-	if(mind)
-		RegisterSignal(mind, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, PROC_REF(on_mind_change))
-	room_update(mob/source)
+	var/list/signals = list(
+		COMSIG_MOVABLE_Z_CHANGED,
+		COMSIG_LIVING_DEATH,
+		COMSIG_LIVING_REVIVE,
+		COMSIG_LIVING_STATUS_UNCONSCIOUS
+	)
+	RegisterSignal(M, signals, PROC_REF(room_update))
+	if(M.mind)
+		RegisterSignal(M.mind, COMSIG_MOB_MIND_TRANSFERRED_OUT, PROC_REF(on_mind_change))
+	room_update(M)
 
+// Handles mind transfer to update voice chat
 /datum/controller/subsystem/voicechat/proc/on_mind_change(datum/mind/source, mob/old_mob)
 	var/mob/M = source.current
 	if(!M)
-		//somethings fucked so we try to find a client to disconnect
 		var/client/C = old_mob.client
-		var/userCode = client_userCode_map[ref(C)]
+		var/userCode = client_userCode_map["\ref[C]"]
 		if(!C || !userCode)
-			// CRASH("couldnt find mob, and no client found to disconnect {M: [M || "null"], C: [C || "null"]}")
 			return
-		disconnect(userCode, from_byond= TRUE)
-	UnregisterSignal(old_mob, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF)
+		disconnect(userCode, from_byond = TRUE)
+		return
+	UnregisterSignal(old_mob, COMSIG_MOB_MIND_TRANSFERRED_OUT)
 	room_update(M)
 
-
+// Updates the voice chat room based on mob status
 /datum/controller/subsystem/voicechat/proc/room_update(mob/source)
-	///first check the client and ensure the client is in the list
 	var/client/C = source.client
-	var/userCode = client_userCode_map[ref(C)]
+	var/userCode = client_userCode_map["\ref[C]"]
 	if(!C || !userCode)
-		UnregisterSignal(source, list(COMSIG_MOVABLE_Z_CHANGED, COMSIG_LIVING_DEATH, COMSIG_LIVING_STATUS_UNCONSCIOUS))
+		UnregisterSignal(source, list(
+			COMSIG_MOVABLE_Z_CHANGED,
+			COMSIG_LIVING_DEATH,
+			COMSIG_LIVING_STATUS_UNCONSCIOUS
+		))
 		return
+
 	var/room
 	switch(source.stat)
 		if(CONSCIOUS to SOFT_CRIT)
-			room = num2text(source.z)
+			room = "[source.z]"
 		if(UNCONSCIOUS to HARD_CRIT)
 			room = null
-		else //dead
+		else
 			room = "ghost"
 	move_userCode_to_room(userCode, room)
 
-
-// usually called from node if the client closes the browser.
-// if from_byond tell node to disconnect the browser and clean up
-/datum/controller/subsystem/voicechat/proc/disconnect(userCode, from_byond= FALSE)
+// Disconnects a user from voice chat
+/datum/controller/subsystem/voicechat/proc/disconnect(userCode, from_byond = FALSE)
 	if(!userCode)
-		// CRASH("{userCode: [userCode || "null"]}")
 		return
 
 	toggle_active(userCode, FALSE)
@@ -124,41 +148,40 @@
 		current_rooms[room] -= userCode
 
 	var/client_ref = userCode_client_map[userCode]
-
-	UnregisterSignal(locate(client_ref), COMSIG_CLIENT_MOB_LOGIN)
-	userCode_client_map.Remove(userCode)
-	client_userCode_map.Remove(client_ref)
-	userCode_room_map.Remove(userCode)
-	vc_clients -= userCode
+	if(client_ref)
+		UnregisterSignal(locate(client_ref), COMSIG_CLIENT_MOB_LOGIN)
+		userCode_client_map.Remove(userCode)
+		client_userCode_map.Remove(client_ref)
+		userCode_room_map.Remove(userCode)
+		vc_clients -= userCode
 
 	if(from_byond)
-		send_json(alist(cmd="disconnect", userCode=userCode))
+		send_json(list("cmd" = "disconnect", "userCode" = userCode))
 
+// Verb for players to join voice chat
+/mob/living/verb/join_voice_chat()
+	set name = "Join Voice Chat"
+	set category = "OOC"
 
-// quick and DIRTY stuff for test play
-/mob/living/verb/join_vc()
-	to_chat(src, span_info("This should open up your webbrowser and give you a warning about a bad certificate. ignore and continue to the site, then allow mic perms. If your having issues please tell us what OS and browser you are using, if you use a VPN, and send a screenshot of your browser console to us."))
 	if(!SSvoicechat)
-		to_chat(src, span_warning("wait until voicechat initialized! {SSvoicechat: [SSvoicechat || "null"]}"))
+		to_chat(src, span_warning("Voice chat subsystem not initialized!"))
 		return
+
+	to_chat(src, span_info("Opening voice chat in your browser. Ignore any certificate warnings, allow microphone permissions, and report issues with your OS, browser, VPN usage, and browser console screenshot."))
 	SSvoicechat.join_vc(client)
-	RegisterSignal(src, COMSIG_LIVING_DEATH, PROC_REF(move_to_ghost_room))
-	RegisterSignal(src, COMSIG_LIVING_REVIVE, PROC_REF(move_to_normal_room))
-	RegisterSignal(src, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(move_to_normal_room))
 
+	RegisterSignal(src, list(
+		COMSIG_LIVING_DEATH,
+		COMSIG_LIVING_REVIVE,
+		COMSIG_MOVABLE_Z_CHANGED
+	), PROC_REF(update_voice_room))
 
-
-
-/mob/living/proc/move_to_ghost_room()
+// Updates voice room based on mob status
+/mob/living/proc/update_voice_room()
 	if(!SSvoicechat || !client)
 		return
-	var/userCode = SSvoicechat.client_userCode_map[ref(client)]
-	SSvoicechat.move_userCode_to_room(userCode, "ghost")
-
-
-/mob/living/proc/move_to_normal_room()
-	if(!SSvoicechat || !client || stat)
+	var/userCode = SSvoicechat.client_userCode_map["\ref[client]"]
+	if(!userCode)
 		return
-	var/userCode = SSvoicechat.client_userCode_map[ref(client)]
-	SSvoicechat.move_userCode_to_room(userCode, "[src.z]")
-
+	var/room = (stat == DEAD) ? "ghost" : "[z]"
+	SSvoicechat.move_userCode_to_room(userCode, room)
