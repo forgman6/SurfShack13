@@ -19,7 +19,7 @@
 			old_mob.overlays -= speaker
 		userCode_mob_map[userCode] = M
 		room_update(M)
-	if(is_active)
+	if(is_active && !M.stat)
 		userCodes_active |= userCode
 		M.overlays |= speaker
 	else
