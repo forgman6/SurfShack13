@@ -25,7 +25,7 @@ SUBSYSTEM_DEF(voicechat)
 	// each speaker per userCode
 	var/list/userCodes_speaking_icon = alist()
 	//list of all rooms to add at round start
-	var/list/rooms_to_add = list("ghost")
+	var/list/rooms_to_add = list("living", "ghost")
 	// if the server and node have successfully communicated
 	var/handshaked = FALSE
 
