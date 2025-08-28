@@ -4,7 +4,7 @@
 		return
 	var/client/C = locate(userCode_client_map[userCode])
 	var/mob/M = C.mob
-	if(!C || M)
+	if(!C || !M)
 		disconnect(userCode, from_byond= TRUE)
 		return
 	var/image/speaker = image('icons/hud/voicechat/speaker.dmi', pixel_y = 32, pixel_x = 8)
