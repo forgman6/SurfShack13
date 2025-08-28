@@ -9,7 +9,7 @@
 		return
 	if(!userCodes_speaking_icon[userCode])
 		var/image/speaker = image('icons/hud/voicechat/speaker.dmi', pixel_y = 32, pixel_x = 8)
-		alpha = 200
+		speaker.alpha = 200
 		userCodes_speaking_icon[userCode] = speaker
 
 	var/image/speaker = userCodes_speaking_icon[userCode]
