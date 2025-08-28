@@ -19,12 +19,12 @@
 			old_mob.overlays -= speaker
 		userCode_mob_map[userCode] = M
 		room_update(M)
-	if(is_active && !M.stat)
+	if(is_active && (isobserver(M) || !M.stat))
 		userCodes_active |= userCode
-		M.overlays |= speaker
+		M.add_overlay(speaker)
 	else
 		userCodes_active -= userCode
-		M.overlays -= speaker
+		M.cut_overlay(speaker)
 
 
 // Mutes or deafens a user's microphone
@@ -35,8 +35,8 @@
 	if(!userCode)
 		return
 	send_json(list(
-		"cmd" = deafen ? "deafen" : "mute_mic",
-		"userCode" = userCode
+		cmd = deafen ? "deafen" : "mute_mic",
+		userCode = userCode
 	))
 
 // Connects a client to voice chat via an external browser
@@ -123,23 +123,28 @@
 		vc_clients -= userCode
 
 	if(from_byond)
-		send_json(list("cmd" = "disconnect", "userCode" = userCode))
+		send_json(alist(cmd= "disconnect", userCode= userCode))
 
 
 /mob/verb/join_vc()
-	src << browse({"<html>
+	src << browse({"
+	<html>
 	<h2>proximity chat</h2>
 	<p>This command should open an external broswer.<br>
 	1. ignore the bad cert and continue onto the site.<br>
 	2. When prompted, allow mic perms and then you should be set up.<br>
 	3. To verify this is working, look for a speaker overlay over your mob in-game.</p>
 	<h4>issues</h4>
-	<p>To try to solve yourself, ensure browser extensions are off and if you are comfortable with it turn off your VPN.
+	<p>To try to solve yourself, ensure browser extensions are off and if you are comfortable with it, turn off your VPN.
 	Additionally try setting firefox as your default browser as that usually works best</p>
 	<h4>reporting bugs</h4>
 	<p> If your are still having issues, its most likely with rtc connections, (roughly 10% connections fail). When reporting bugs, please tell us what OS and browser you are using, if you use a VPN, and send a screenshot of your browser console to us (ctrl + shift + I).
 	Additionally I might ask you to navigate to about:webrtc/p>
-	<img src='https://files.catbox.moe/mkz9tv.png'></html>"}, "window=voicechat_help")
+	<h4>But Im to lazy to report a bug<h4>
+	<p>contact a_forg on discord and he might not ignore you.</p>
+	<img src='https://files.catbox.moe/mkz9tv.png>
+	</html>"}, "window=voicechat_help")
+
 	if(SSvoicechat)
 		SSvoicechat.join_vc(client)
 
