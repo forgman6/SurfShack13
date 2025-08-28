@@ -3,10 +3,11 @@
 	if(!userCode || isnull(is_active))
 		return
 	var/client/C = locate(userCode_client_map[userCode])
-	var/mob/M = C.mob
-	if(!C || !M)
+
+	if(!C || !C.mob)
 		disconnect(userCode, from_byond= TRUE)
 		return
+	var/mob/M = C.mob
 	if(!userCodes_speaking_icon[userCode])
 		var/image/speaker = image('icons/mob/effects/talk.dmi', icon_state = "voice")
 		speaker.alpha = 200

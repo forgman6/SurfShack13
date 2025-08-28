@@ -100,14 +100,15 @@ SUBSYSTEM_DEF(voicechat)
 		if(!C || !room)
 			continue
 		var/mob/M = C.mob
-		var/zlevel = num2text(M.z)
+		var/zlevel = M.z
 		if(!M || !zlevel)
 			continue
+		var/localroom = "[zlevel]_[room]"
 		if(userCode in userCodes_active)
 			room_update(M)
-		if(!params[zlevel])
-			params[zlevel] = alist()
-		params[zlevel][userCode] = list(M.x, M.y, room)
+		if(!params[localroom])
+			params[localroom] = alist()
+		params[localroom][userCode] = list(M.x, M.y)
 	send_json(params)
 
 
