@@ -90,6 +90,7 @@
 	room_update(M)
 
 // Updates the voice chat room based on mob status
+// this needs to be moved to signals at some point
 /datum/controller/subsystem/voicechat/proc/room_update(mob/source)
 	var/client/C = source.client
 	var/userCode = client_userCode_map[ref(C)]
@@ -98,7 +99,7 @@
 	var/room
 	switch(source.stat)
 		if(CONSCIOUS to SOFT_CRIT)
-			room = "[source.z]"
+			room = "living"
 		if(UNCONSCIOUS to HARD_CRIT)
 			room = null
 		else
@@ -141,7 +142,7 @@
 	<p> If your are still having issues, its most likely with rtc connections, (roughly 10% connections fail). When reporting bugs, please tell us what OS and browser you are using, if you use a VPN, and send a screenshot of your browser console to us (ctrl + shift + I).
 	Additionally I might ask you to navigate to about:webrtc/p>
 	<h4>But Im to lazy to report a bug<h4>
-	<p>contact a_forg on discord and he might not ignore you.</p>
+	<p>contact a_forg on discord and they might not ignore you.</p>
 	<img src='https://files.catbox.moe/mkz9tv.png>
 	</html>"}, "window=voicechat_help")
 
