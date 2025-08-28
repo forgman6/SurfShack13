@@ -7,19 +7,25 @@
 	if(!C || !M)
 		disconnect(userCode, from_byond= TRUE)
 		return
-	var/image/speaker = image('icons/hud/voicechat/speaker.dmi', pixel_y = 32, pixel_x = 8)
-	speaker.mouse_opacity = FALSE
+	if(!userCodes_speaking_icon[userCode])
+		var/image/speaker = image('icons/hud/voicechat/speaker.dmi', pixel_y = 32, pixel_x = 8)
+		alpha = 200
+		userCodes_speaking_icon[userCode] = speaker
+
+	var/image/speaker = userCodes_speaking_icon[userCode]
 	var/mob/old_mob = userCode_mob_map[userCode]
 	if(M != old_mob)
-		// if there is an old mob remove overlays
 		if(old_mob)
 			old_mob.overlays -= speaker
 		userCode_mob_map[userCode] = M
 		room_update(M)
 	if(is_active)
-		M.overlays += speaker
+		userCodes_active |= userCode
+		M.overlays |= speaker
 	else
+		userCodes_active -= userCode
 		M.overlays -= speaker
+
 
 // Mutes or deafens a user's microphone
 /datum/controller/subsystem/voicechat/proc/mute_mic(client/C, deafen = FALSE)

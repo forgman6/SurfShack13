@@ -20,6 +20,8 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/userCode_mob_map = alist()
 	// used to ensure rooms are always updated
 	var/list/userCodes_active = list()
+	// each speaker per userCode
+	var/list/userCodes_speaking_icon = alist()
 	// if the server and node have successfully communicated
 	var/handshaked = FALSE
 	//subsystem "defines"
