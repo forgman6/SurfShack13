@@ -1,5 +1,5 @@
 //uncomment to show traffic
-// #define LOG_TRAFFIC
+#define LOG_TRAFFIC
 //ensure its atleast compiled right
 /datum/controller/subsystem/voicechat/proc/test_library()
 	var/text = "hello word"
@@ -7,6 +7,7 @@
 	var/confirmed = (out == text)
 	ASSERT(confirmed, "byondsocket library: [src.lib_path] not found or working {out: [out || "null"]}")
 	return confirmed
+
 
 /proc/json_encode_sanitize(list/data)
 	. = json_encode(data)
@@ -23,6 +24,7 @@
 	world.log << "BYOND: [json]"
 	#endif
 	call_ext(src.lib_path, "byond:SendJSON")(json)
+
 
 /datum/controller/subsystem/voicechat/proc/handle_topic(T)
 	var/list/data = json_decode(T)

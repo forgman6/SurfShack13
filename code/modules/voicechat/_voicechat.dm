@@ -4,13 +4,15 @@ SUBSYSTEM_DEF(voicechat)
 	flags = SS_KEEP_TIMING
 	init_order = INIT_ORDER_VOICECHAT
 	runlevels = RUNLEVEL_GAME|RUNLEVEL_POSTGAME
+
+	//     --list shit--
+
 	//userCodes associated thats been fully confirmed - browser paired and mic perms on
 	var/list/vc_clients = list()
 	//userCode to clientRef
 	var/list/userCode_client_map = alist()
 	var/list/client_userCode_map = alist()
-	//list of all rooms to add at round start
-	var/list/rooms_to_add = list("ghost")
+
 	//a list all currnet rooms
 	//change with add_rooms and remove_rooms.
 	var/list/current_rooms = alist()
@@ -22,9 +24,13 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/userCodes_active = list()
 	// each speaker per userCode
 	var/list/userCodes_speaking_icon = alist()
+	//list of all rooms to add at round start
+	var/list/rooms_to_add = list("ghost")
 	// if the server and node have successfully communicated
 	var/handshaked = FALSE
-	//subsystem "defines"
+
+	//   --subsystem "defines"--
+
 	//which port to run the node websockets
 	var/const/node_port = 3000
 	//node server path
@@ -94,13 +100,14 @@ SUBSYSTEM_DEF(voicechat)
 		if(!C || !room)
 			continue
 		var/mob/M = C.mob
-		if(!M)
+		var/zlevel = num2text(M.z)
+		if(!M || !zlevel)
 			continue
 		if(userCode in userCodes_active)
 			room_update(M)
-		if(!params[room])
-			params[room] = alist()
-		params[room][userCode] = list(M.x, M.y)
+		if(!params[zlevel])
+			params[zlevel] = alist()
+		params[zlevel][userCode] = list(M.x, M.y, room)
 	send_json(params)
 
 
