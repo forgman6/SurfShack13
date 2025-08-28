@@ -18,6 +18,8 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/userCode_room_map = alist()
 	// usercode to mob only really used for the overlays
 	var/list/userCode_mob_map = alist()
+	// used to ensure rooms are always updated
+	var/list/userCodes_active = list()
 	// if the server and node have successfully communicated
 	var/handshaked = FALSE
 	//subsystem "defines"
@@ -85,6 +87,8 @@ SUBSYSTEM_DEF(voicechat)
 /datum/controller/subsystem/voicechat/proc/send_locations()
 	var/list/params = alist(cmd = "loc")
 	for(var/userCode in vc_clients)
+		if(userCode in userCodes_active)
+			room_update(userCode)
 		var/client/C = locate(userCode_client_map[userCode])
 		var/room =  userCode_room_map[userCode]
 		if(!C || !room)

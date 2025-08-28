@@ -3,11 +3,12 @@
 	if(!userCode || isnull(is_active))
 		return
 	var/client/C = locate(userCode_client_map[userCode])
-	if(!C)
+	var/mob/M = C.mob
+	if(!C || M)
 		disconnect(userCode, from_byond= TRUE)
 		return
-	var/mob/M = C.mob
 	var/image/speaker = image('icons/hud/voicechat/speaker.dmi', pixel_y = 32, pixel_x = 8)
+	speaker.mouse_opacity = FALSE
 	var/mob/old_mob = userCode_mob_map[userCode]
 	if(M != old_mob)
 		// if there is an old mob remove overlays
@@ -120,7 +121,19 @@
 
 
 /mob/verb/join_vc()
-	src << browse(@'<html><h2>proximity chat</h2> <p>this command should open an external broswer, ignore the bad cert and continue onto the site. when prompted, allow mic perms and then you should be set up. Verify this is working by looking for a speaker overlay over your mob ingame</p> <h4>issues</h4> <p>to try to solve yourself, ensure browser extensions are off and if you are using a vpn, try without. additionally try running on firefox as thats usually works best</p> <h4>reporting bugs</h4> <p> If your having issues please tell us what OS and browser you are using, if you use a VPN, and send a screenshot of your browser console to us (ctrl + shift + I). </p> <h4>contact</h4> <p>a_forg on discord</p> <img src="https://files.catbox.moe/mkz9tv.png"></html>', "window=voicechat_help")
+	src << browse({"<html>
+	<h2>proximity chat</h2>
+	<p>This command should open an external broswer.<br>
+	1. ignore the bad cert and continue onto the site.<br>
+	2. When prompted, allow mic perms and then you should be set up.<br>
+	3. To verify this is working, look for a speaker overlay over your mob in-game.</p>
+	<h4>issues</h4>
+	<p>To try to solve yourself, ensure browser extensions are off and if you are comfortable with it turn off your VPN.
+	Additionally try setting firefox as your default browser as that usually works best</p>
+	<h4>reporting bugs</h4>
+	<p> If your are still having issues, its most likely with rtc connections, (roughly 10% connections fail). When reporting bugs, please tell us what OS and browser you are using, if you use a VPN, and send a screenshot of your browser console to us (ctrl + shift + I).
+	Additionally I might ask you to navigate to about:webrtc/p>
+	<img src='https://files.catbox.moe/mkz9tv.png'></html>"}, "window=voicechat_help")
 	if(SSvoicechat)
 		SSvoicechat.join_vc(client)
 
