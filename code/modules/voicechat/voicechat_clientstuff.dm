@@ -4,9 +4,17 @@
 		return
 	var/client/C = locate(userCode_client_map[userCode])
 	if(!C)
+		disconnect(userCode, from_byond= TRUE)
 		return
-	var/atom/movable/M = C.mob
-	var/image/speaker = image('icons/hud/voicechat/speaker.dmi', M, pixel_y = 32, pixel_x = 8)
+	var/mob/M = C.mob
+	var/image/speaker = image('icons/hud/voicechat/speaker.dmi', pixel_y = 32, pixel_x = 8)
+	var/mob/old_mob = userCode_mob_map[userCode]
+	if(M != old_mob)
+		// if there is an old mob remove overlays
+		if(old_mob)
+			old_mob.overlays -= speaker
+		userCode_mob_map[userCode] = M
+		room_update(M)
 	if(is_active)
 		M.overlays += speaker
 	else
@@ -72,56 +80,14 @@
 		return
 
 	var/mob/M = C.mob
-	var/list/signals = list(
-		COMSIG_MOVABLE_Z_CHANGED,
-		COMSIG_LIVING_DEATH,
-		COMSIG_LIVING_REVIVE,
-		COMSIG_LIVING_STATUS_UNCONSCIOUS
-	)
-	RegisterSignals(M, signals, PROC_REF(room_update), override = TRUE)
-	if(M.mind)
-		RegisterSignal(M.mind, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, PROC_REF(on_mind_change), override = TRUE)
-	RegisterSignal(C, COMSIG_CLIENT_MOB_LOGIN, PROC_REF(on_mob_change), override = TRUE)
-
-// Handles mob change for a client
-/datum/controller/subsystem/voicechat/proc/on_mob_change(client/source, mob/M)
-	var/list/signals = list(
-		COMSIG_MOVABLE_Z_CHANGED,
-		COMSIG_LIVING_DEATH,
-		COMSIG_LIVING_REVIVE,
-		COMSIG_LIVING_STATUS_UNCONSCIOUS
-	)
-	RegisterSignal(M, signals, PROC_REF(room_update))
-	if(M.mind)
-		RegisterSignal(M.mind, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, PROC_REF(on_mind_change))
-	room_update(M)
-
-// Handles mind transfer to update voice chat
-/datum/controller/subsystem/voicechat/proc/on_mind_change(datum/mind/source, mob/old_mob)
-	var/mob/M = source.current
-	if(!M)
-		var/client/C = old_mob.client
-		var/userCode = client_userCode_map[ref(C)]
-		if(!C || !userCode)
-			return
-		disconnect(userCode, from_byond = TRUE)
-		return
-	UnregisterSignal(old_mob, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF)
 	room_update(M)
 
 // Updates the voice chat room based on mob status
 /datum/controller/subsystem/voicechat/proc/room_update(mob/source)
-	world.log << "room_update called"
 	var/client/C = source.client
 	var/userCode = client_userCode_map[ref(C)]
 	if(!C || !userCode)
-		UnregisterSignal(source, list(
-			COMSIG_MOVABLE_Z_CHANGED,
-			COMSIG_LIVING_DEATH,
-			COMSIG_LIVING_STATUS_UNCONSCIOUS
-		))
 		return
-
 	var/room
 	switch(source.stat)
 		if(CONSCIOUS to SOFT_CRIT)
@@ -144,7 +110,6 @@
 
 	var/client_ref = userCode_client_map[userCode]
 	if(client_ref)
-		UnregisterSignal(locate(client_ref), COMSIG_CLIENT_MOB_LOGIN)
 		userCode_client_map.Remove(userCode)
 		client_userCode_map.Remove(client_ref)
 		userCode_room_map.Remove(userCode)

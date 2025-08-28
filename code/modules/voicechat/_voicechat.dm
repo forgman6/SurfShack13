@@ -16,6 +16,8 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/current_rooms = alist()
 	// usercode to room
 	var/list/userCode_room_map = alist()
+	// usercode to mob only really used for the overlays
+	var/list/userCode_mob_map = alist()
 	// if the server and node have successfully communicated
 	var/handshaked = FALSE
 	//subsystem "defines"
@@ -25,6 +27,7 @@ SUBSYSTEM_DEF(voicechat)
 	var/const/node_path = "voicechat/node/server/main.js"
 	//library path
 	var/const/lib_path = "voicechat/pipes/byondsocket.so"
+
 
 /datum/controller/subsystem/voicechat/fire()
 	send_locations()
@@ -56,8 +59,8 @@ SUBSYSTEM_DEF(voicechat)
 
 
 /datum/controller/subsystem/voicechat/proc/move_userCode_to_room(userCode, room)
-	// if(!room || !current_rooms.Find(room))
-	// 	return
+	if(!room || !current_rooms.Find(room))
+		return
 
 	var/own_room = userCode_room_map[userCode]
 	if(own_room)
