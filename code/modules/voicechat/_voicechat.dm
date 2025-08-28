@@ -89,8 +89,6 @@ SUBSYSTEM_DEF(voicechat)
 /datum/controller/subsystem/voicechat/proc/send_locations()
 	var/list/params = alist(cmd = "loc")
 	for(var/userCode in vc_clients)
-		if(userCode in userCodes_active)
-			room_update(userCode)
 		var/client/C = locate(userCode_client_map[userCode])
 		var/room =  userCode_room_map[userCode]
 		if(!C || !room)
@@ -98,6 +96,8 @@ SUBSYSTEM_DEF(voicechat)
 		var/mob/M = C.mob
 		if(!M)
 			continue
+		if(userCode in userCodes_active)
+			room_update(M)
 		if(!params[room])
 			params[room] = alist()
 		params[room][userCode] = list(M.x, M.y)

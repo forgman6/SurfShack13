@@ -8,7 +8,7 @@
 		disconnect(userCode, from_byond= TRUE)
 		return
 	if(!userCodes_speaking_icon[userCode])
-		var/image/speaker = image('icons/hud/voicechat/speaker.dmi', pixel_y = 32, pixel_x = 8)
+		var/image/speaker = image('icons/mob/effects/talk.dmi', icon_state = "voice")
 		speaker.alpha = 200
 		userCodes_speaking_icon[userCode] = speaker
 
