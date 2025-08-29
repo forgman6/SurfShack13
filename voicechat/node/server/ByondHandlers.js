@@ -82,6 +82,26 @@ function handleRequest(data, byondPort, io, shutdown_function) {
                 socket.disconnect();
                 userCodeToSocketId.delete(data['userCode']);
                 socketIdToUserCode.delete(socketId);
+            },
+            mute_userCode: (data) => {
+                const userCodeFiring = data['userCodeFiring'];
+                const userCodeMuting = data['userCodeMuting'];
+                const muting = data['muting']; //true if muting false if unmuting
+                if(!userCodeFiring || !userCodeMuting || !muting){
+                    const errorMsg = "Missing or invalid data: userCodeFiring or userCodeMuting or muting";
+                    console.log(`error: ${errorMsg}`);
+                    sendJSON({ error: errorMsg, data: data }, byondPort);
+                    return;
+                }
+                const socketId = userCodeToSocketId.get(userCodeFiring);
+                const socket = io.sockets.sockets.get(socketId);
+                if (!socketId || !socket) {
+                    const errorMsg = "socket not found";
+                    console.log(`error: ${errorMsg}`);
+                    sendJSON({ error: errorMsg, data: data }, byondPort);
+                    return;
+                }
+                socket.emit('mute_usercode', {userCode: userCodeMutin, mute: muting})
             }
         };
 

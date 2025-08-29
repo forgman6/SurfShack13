@@ -26,6 +26,8 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/userCodes_speaking_icon = alist()
 	//list of all rooms to add at round start
 	var/list/rooms_to_add = list("living", "ghost")
+	//holds a normal list of all the ckeys and list of all usercodes that muted that ckey
+	var/list/ckey_muted_by = alist()
 	// if the server and node have successfully communicated
 	var/handshaked = FALSE
 

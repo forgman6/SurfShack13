@@ -13,6 +13,7 @@ let peerConnections = new Map();
 let audioElements = new Map();
 let audioSenders = new Map();
 let distances = new Map();
+let mutedUsers = new Map();
 let gainNode = null;
 let vadAudioContext = null;
 let vadAnalyser = null;
@@ -159,11 +160,17 @@ function updateSensitivity() {
 function updateVolumes() {
     const masterVolume = document.getElementById('volume_slider').value ;
     audioElements.forEach((audio, userCode) => {
-        const dist = distances.get(userCode) || 0;
-        const linearBase = Math.max(0, 1 - dist / 10);
-        // const baseVolume = Math.pow(linearBase, 2);
-        const vol = linearBase * masterVolume
-        audio.volume = vol
+        const isMuted = mutedUsers.get(userCode);
+        if(!isMuted){
+            const dist = distances.get(userCode) || 0;
+            const linearBase = Math.max(0, 1 - dist / 10);
+            // const baseVolume = Math.pow(linearBase, 2);
+            const vol = linearBase * masterVolume
+            audio.volume = vol
+        }
+        else {
+            audio.volume = 0;
+        }
         // console.log(`volume ${vol}`)
     });
 }
@@ -498,6 +505,15 @@ function setupSocketHandlers() {
     socket.on('deafen', () => {
         toggleDeafen(true);
     });
+
+    // socket.emit('mute_usercode', {userCode: userCodeMuting, mute: muting})
+    socket.on('mute_usercode', (data) => {
+        const userCode = data['userCode']
+        if(!userCode) return;
+        const mute = data['mute']
+        mutedUsers.set(userCode, mute)
+        updateVolumes()
+    })
 }
 
 function cleanupConnections() {
