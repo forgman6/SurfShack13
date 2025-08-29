@@ -1,5 +1,5 @@
 //uncomment to show traffic
-#define LOG_TRAFFIC
+// #define LOG_TRAFFIC
 //ensure its atleast compiled right
 /datum/controller/subsystem/voicechat/proc/test_library()
 	var/text = "hello word"
