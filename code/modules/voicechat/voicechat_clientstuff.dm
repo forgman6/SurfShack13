@@ -14,7 +14,8 @@
 		return
 
 	// Open external browser with voice chat link
-	C << link("https://[world.internet_address]:[node_port]?sessionId=[sessionId]")
+	var/address = src.domain || world.internet_address
+	C << link("https://[address]:[node_port]?sessionId=[sessionId]")
 	send_json(alist(
 		cmd = "register",
 		userCode = userCode,
