@@ -1,3 +1,42 @@
+// Connects a client to voice chat via an external browser
+/datum/controller/subsystem/voicechat/proc/join_vc(client/C)
+	if(!C)
+		return
+	// Disconnect existing session if present
+	var/existing_userCode = client_userCode_map[ref(C)]
+	if(existing_userCode)
+		disconnect(existing_userCode, from_byond = TRUE)
+
+	// Generate unique session and user codes
+	var/sessionId = md5("[world.time][rand()][world.realtime][rand(0,9999)][C.address][C.computer_id]")
+	var/userCode = generate_userCode(C)
+	if(!userCode)
+		return
+
+	// Open external browser with voice chat link
+	C << link("https://[world.internet_address]:[node_port]?sessionId=[sessionId]")
+	send_json(alist(
+		cmd = "register",
+		userCode = userCode,
+		sessionId = sessionId
+	))
+
+	// Link client to userCode
+	userCode_client_map[userCode] = ref(C)
+	client_userCode_map[ref(C)] = userCode
+	// Confirmation handled in confirm_userCode
+
+// Sets up signals for a confirmed voice chat user
+/datum/controller/subsystem/voicechat/proc/post_confirm(userCode)
+	var/client/C = locate(userCode_client_map[userCode])
+	if(!C || !C.mob)
+		disconnect(userCode, from_byond = TRUE)
+		return
+
+	var/mob/M = C.mob
+	room_update(M)
+
+
 // Toggles the speaker overlay for a user
 /datum/controller/subsystem/voicechat/proc/toggle_active(userCode, is_active)
 	if(!userCode || isnull(is_active))
@@ -40,127 +79,4 @@
 		userCode = userCode
 	))
 
-// Connects a client to voice chat via an external browser
-/datum/controller/subsystem/voicechat/proc/join_vc(client/C)
-	if(!C)
-		return
-	// Disconnect existing session if present
-	var/existing_userCode = client_userCode_map[ref(C)]
-	if(existing_userCode)
-		disconnect(existing_userCode, from_byond = TRUE)
-
-	// Generate unique session and user codes
-	var/sessionId = md5("[world.time][rand()][world.realtime][rand(0,9999)][C.address][C.computer_id]")
-	var/userCode = generate_userCode(C)
-	if(!userCode)
-		return
-
-	// Open external browser with voice chat link
-	C << link("https://[world.internet_address]:[node_port]?sessionId=[sessionId]")
-	send_json(alist(
-		cmd = "register",
-		userCode = userCode,
-		sessionId = sessionId
-	))
-
-	// Link client to userCode
-	userCode_client_map[userCode] = ref(C)
-	client_userCode_map[ref(C)] = userCode
-	// Confirmation handled in confirm_userCode
-
-// Confirms userCode when browser and mic access are granted
-/datum/controller/subsystem/voicechat/proc/confirm_userCode(userCode)
-	if(!userCode || (userCode in vc_clients))
-		return
-	var/client_ref = userCode_client_map[userCode]
-	if(!client_ref)
-		return
-
-	vc_clients += userCode
-	log_world("Voice chat confirmed for userCode: [userCode]")
-	post_confirm(userCode)
-
-// Sets up signals for a confirmed voice chat user
-/datum/controller/subsystem/voicechat/proc/post_confirm(userCode)
-	var/client/C = locate(userCode_client_map[userCode])
-	if(!C || !C.mob)
-		disconnect(userCode, from_byond = TRUE)
-		return
-
-	var/mob/M = C.mob
-	room_update(M)
-
-// Updates the voice chat room based on mob status
-// this needs to be moved to signals at some point
-/datum/controller/subsystem/voicechat/proc/room_update(mob/source)
-	var/client/C = source.client
-	var/userCode = client_userCode_map[ref(C)]
-	if(!C || !userCode)
-		return
-	var/room
-	switch(source.stat)
-		if(CONSCIOUS to SOFT_CRIT)
-			room = "living"
-		if(UNCONSCIOUS to HARD_CRIT)
-			room = null
-		else
-			room = "ghost"
-	move_userCode_to_room(userCode, room)
-
-// Disconnects a user from voice chat
-/datum/controller/subsystem/voicechat/proc/disconnect(userCode, from_byond = FALSE)
-	if(!userCode)
-		return
-
-	toggle_active(userCode, FALSE)
-	var/room = userCode_room_map[userCode]
-	if(room)
-		current_rooms[room] -= userCode
-
-	var/client_ref = userCode_client_map[userCode]
-	if(client_ref)
-		userCode_client_map.Remove(userCode)
-		client_userCode_map.Remove(client_ref)
-		userCode_room_map.Remove(userCode)
-		vc_clients -= userCode
-
-	if(from_byond)
-		send_json(alist(cmd= "disconnect", userCode= userCode))
-
-
-/mob/verb/join_vc()
-	src << browse({"
-	<html>
-	<h2>Experimental Proximity Chat</h2>
-	<p>This command should open an external broswer.<br>
-	1. ignore the bad cert and continue onto the site.<br>
-	2. When prompted, allow mic perms and then you should be set up.<br>
-	3. To verify this is working, look for a speaker overlay over your mob in-game.</p>
-	4. drag the voicechat to its own window so its only the active tab - why? if you open a different tab it stops detecting microphone input. The easiest way to ensure the tab is active, is to drag it to its own window.
-	<h4>other verbs</h4>
-	<p>mute - mutes yourself<br>
-	deafen - deafens yourself<br>
-	<h4>issues</h4>
-	<p>To try to solve yourself, ensure browser extensions are off and if you are comfortable with it, turn off your VPN.
-	Additionally try setting firefox as your default browser as that usually works best</p>
-	<h4>reporting bugs</h4>
-	<p> If your are still having issues, its most likely with rtc connections, (roughly 10% connections fail). When reporting bugs, please tell us what OS and browser you are using, if you use a VPN, and send a screenshot of your browser console to us (ctrl + shift + I).
-	Additionally I might ask you to navigate to about:webrtc</p>
-	<h4>But Im to lazy to report a bug<h4>
-	<p>contact a_forg on discord and they might not ignore you.</p>
-	<img src='https://files.catbox.moe/mkz9tv.png>
-	</html>"}, "window=voicechat_help")
-
-	if(SSvoicechat)
-		SSvoicechat.join_vc(client)
-
-
-/mob/verb/mute_self()
-	if(SSvoicechat)
-		SSvoicechat.mute_mic(client)
-
-
-/mob/verb/deafen()
-	if(SSvoicechat)
-		SSvoicechat.mute_mic(client, deafen=TRUE)
 

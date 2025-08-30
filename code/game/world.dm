@@ -268,7 +268,7 @@ GLOBAL_PROTECT(tracy_init_reason)
 	TGS_TOPIC //redirect to server tools if necessary
 
 	if(addr == "127.0.0.1" && SSvoicechat)
-		SSvoicechat.handle_topic(T)
+		SSvoicechat.handle_topic(T , addr)
 
 	var/static/list/topic_handlers = TopicHandlers()
 

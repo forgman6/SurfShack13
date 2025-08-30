@@ -40,6 +40,28 @@ SUBSYSTEM_DEF(voicechat)
 	//library path
 	var/const/lib_path = "voicechat/pipes/byondsocket.so"
 
+//  --lifecycle--
+
+/datum/controller/subsystem/voicechat/Initialize()
+	. = ..()
+	if(!test_library())
+		return SS_INIT_FAILURE
+	add_rooms(rooms_to_add)
+	start_node()
+	return SS_INIT_SUCCESS
+
+
+/datum/controller/subsystem/voicechat/proc/start_node()
+	// byond port used for topic calls
+	var/byond_port = world.port
+	spawn() shell("node [src.node_path] --node-port=[src.node_port] --byond-port=[byond_port]")
+
+
+/datum/controller/subsystem/voicechat/Del()
+	send_json(alist(cmd= "stop_node"))
+	. = ..()
+
+// -- normal stuff--
 
 /datum/controller/subsystem/voicechat/fire()
 	send_locations()
@@ -92,8 +114,20 @@ SUBSYSTEM_DEF(voicechat)
 	world.log << "registered userCode:[userCode] to client_ref:[client_ref]"
 
 
+// Confirms userCode when browser and mic access are granted
+/datum/controller/subsystem/voicechat/proc/confirm_userCode(userCode)
+	if(!userCode || (userCode in vc_clients))
+		return
+	var/client_ref = userCode_client_map[userCode]
+	if(!client_ref)
+		return
+
+	vc_clients += userCode
+	log_world("Voice chat confirmed for userCode: [userCode]")
+	post_confirm(userCode)
 
 
+// faster the better
 /datum/controller/subsystem/voicechat/proc/send_locations()
 	var/list/params = alist(cmd = "loc")
 	for(var/userCode in vc_clients)
@@ -114,6 +148,27 @@ SUBSYSTEM_DEF(voicechat)
 	send_json(params)
 
 
+// Disconnects a user from voice chat
+/datum/controller/subsystem/voicechat/proc/disconnect(userCode, from_byond = FALSE)
+	if(!userCode)
+		return
+
+	toggle_active(userCode, FALSE)
+	var/room = userCode_room_map[userCode]
+	if(room)
+		current_rooms[room] -= userCode
+
+	var/client_ref = userCode_client_map[userCode]
+	if(client_ref)
+		userCode_client_map.Remove(userCode)
+		client_userCode_map.Remove(client_ref)
+		userCode_room_map.Remove(userCode)
+		vc_clients -= userCode
+
+	if(from_byond)
+		send_json(alist(cmd= "disconnect", userCode= userCode))
+
+
 /datum/controller/subsystem/voicechat/proc/generate_userCode(client/C)
 	if(!C)
 		// CRASH("no client or wrong type")
@@ -125,3 +180,20 @@ SUBSYSTEM_DEF(voicechat)
 	return .
 
 
+// Updates the voice chat room based on mob status
+// this needs to be moved to signals at some point
+/datum/controller/subsystem/voicechat/proc/room_update(mob/source)
+	var/client/C = source.client
+	var/userCode = client_userCode_map[ref(C)]
+	if(!C || !userCode)
+		return
+	var/room
+	switch(source.stat)
+		if(CONSCIOUS to SOFT_CRIT)
+			room = "living"
+		if(UNCONSCIOUS to HARD_CRIT)
+			room = null
+		else
+			room = "ghost"
+	if(userCode_room_map[userCode] != room)
+		move_userCode_to_room(userCode, room)
