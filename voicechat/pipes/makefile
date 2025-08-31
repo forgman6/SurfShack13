@@ -1,8 +1,8 @@
 # Makefile
-BYOND_ROOT = $(PWD)/../../../../Byond # APE SHIT
+# APE SHIT
+BYOND_ROOT = $(PWD)/../../../../Byond
 BYOND_VERSION = $(shell cat $(BYOND_ROOT)/ActiveVersion.txt)
 BYOND_PATH = $(BYOND_ROOT)/$(BYOND_VERSION)/byond/bin
-
 CC = gcc
 CPP = g++
 CFLAGS = -m32 -pthread -g -Wall -Wno-deprecated -O3 -fno-strict-aliasing
