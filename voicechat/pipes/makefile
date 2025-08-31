@@ -1,7 +1,4 @@
 # Makefile
-# Dynamically determine the BYOND path based on the active version from the tgstation-server setup.
-# Assumes the ActiveVersion file is at /home/tgstation-server/SurfShack13/Byond/ActiveVersion
-# and the libbyond.so is under /home/tgstation-server/SurfShack13/Byond/<version>/byond/bin/libbyond.so
 BYOND_ROOT = $(PWD)/../../Byond
 BYOND_VERSION = $(shell cat $(BYOND_ROOT)/ActiveVersion)
 BYOND_PATH = $(BYOND_ROOT)/$(BYOND_VERSION)/byond/bin
