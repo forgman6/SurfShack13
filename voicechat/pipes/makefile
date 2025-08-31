@@ -1,5 +1,6 @@
 # Makefile
-BYOND_ROOT = $(PWD)/../../Byond
+# APE SHIT INSANE POOPFART
+BYOND_ROOT = $(PWD)/../../../../Byond
 BYOND_VERSION = $(shell cat $(BYOND_ROOT)/ActiveVersion.txt)
 BYOND_PATH = $(BYOND_ROOT)/$(BYOND_VERSION)/byond/bin
 
