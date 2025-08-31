@@ -40,7 +40,7 @@ SUBSYSTEM_DEF(voicechat)
 	//library path
 	var/const/lib_path = "voicechat/pipes/byondsocket.so"
 	//if you have a domain, put it here.
-	var/const/domain = "surfshack13.net"
+	var/const/domain
 //  --lifecycle--
 
 /datum/controller/subsystem/voicechat/Initialize()
