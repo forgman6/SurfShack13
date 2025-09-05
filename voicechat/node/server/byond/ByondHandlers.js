@@ -1,6 +1,6 @@
-const { sendJSON } = require('./byondCommunication');
-const { sessionIdToUserCode, userCodeToSocketId, socketIdToUserCode } = require('./state');
-const { handleLocationPacket } = require('./roomManagement');
+const { sendJSON } = require('./ByondCommunication');
+const { sessionIdToUserCode, userCodeToSocketId, socketIdToUserCode } = require('../state');
+const { handleLocationPacket } = require('../proximity');
 function handleRequest(data, byondPort, io, shutdown_function) {
     try {
         const { cmd } = data;

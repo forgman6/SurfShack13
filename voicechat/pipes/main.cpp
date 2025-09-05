@@ -53,7 +53,7 @@ extern "C" BYOND_EXPORT CByondValue SendJSON(u4c n, ByondValue v[]) {
     struct sockaddr_un addr;
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, "/tmp/byond_node.sock", sizeof(addr.sun_path) - 1);
+    strncpy(addr.sun_path, "byond_node.sock", sizeof(addr.sun_path) - 1);
 
     if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
         close(sock);

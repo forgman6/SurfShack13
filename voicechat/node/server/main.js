@@ -1,8 +1,9 @@
+const { execSync } = require('child_process');
 const minimist = require('minimist');
-const { startWebSocketServer, disconnectAllClients } = require('./websocketServer');
-const { startByondServer } = require('./ByondServer.js');
-const { monitorParentProcess } = require('./processUtils.js');
-const { sendJSON } = require('./byondCommunication');
+
+const { startWebSocketServer, disconnectAllClients } = require('./client/websocketServer.js');
+const { startByondServer } = require('./byond/ByondServer.js');
+const { sendJSON } = require('./byond/ByondCommunication.js');
 
 const argv = minimist(process.argv.slice(2));
 const byondPort = argv['byond-port']
@@ -21,7 +22,37 @@ const shutdown_function = () => {
     });
 };
 
-// Monitor parent process
+const originalParentPid = process.ppid;
+
+function isParentRunning() {
+    if (process.platform === 'win32') {
+        try {
+            const output = execSync(`tasklist /FI "PID eq ${originalParentPid}"`).toString();
+            return output.includes(originalParentPid.toString());
+        } catch (e) {
+            return false;
+        }
+    } else {
+        try {
+            process.kill(originalParentPid, 0);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+}
+
+function monitorParentProcess(shutdown_function) {
+    setInterval(() => {
+        if (!isParentRunning()) {
+            console.log('Parent process terminated, shutting down Node.js server');
+            shutdown_function();
+            
+        }
+    }, 10000); // 10 seconds
+}
+
+
 monitorParentProcess(shutdown_function);
 
 // Start servers

@@ -1,5 +1,5 @@
-const { sessionIdToUserCode, userCodeToSocketId, socketIdToUserCode} = require('./state');
-const { sendJSON } = require('./byondCommunication');
+const { sessionIdToUserCode, userCodeToSocketId, socketIdToUserCode} = require('../state');
+const { sendJSON } = require('../byond/ByondCommunication');
 
 function createConnectionHandler(byondPort, io) {
     return function handleConnection(socket) {

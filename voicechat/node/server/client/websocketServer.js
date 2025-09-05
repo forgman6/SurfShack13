@@ -1,21 +1,25 @@
 const express = require('express');
 const https = require('https');
 const fs = require('fs');
+const path = require('path');
 const { Server } = require('socket.io');
 const { createConnectionHandler } = require('./websocketHandlers');
 
+const node_path = path.resolve(process.cwd(), 'voicechat/node')
+const cert_path = path.resolve(node_path, "certs")
+
 function startWebSocketServer(byondPort, nodePort) {
     const options = {
-        key: fs.readFileSync(__dirname + '/certs/key.pem'),
-        cert: fs.readFileSync(__dirname + '/certs/cert.pem')
+        key: fs.readFileSync(path.resolve(cert_path, 'key.pem')),
+        cert: fs.readFileSync(path.resolve(cert_path, 'cert.pem'))
     };
     const app = express();
     const server = https.createServer(options, app);
     const io = new Server(server);
-
-    app.use(express.static(__dirname + '/public'));
+    const public_path = path.resolve(node_path,  'public')
+    app.use(express.static(public_path));
     app.get('/', (req, res) => {
-        res.sendFile(__dirname + '/public/voicechat.html');
+        res.sendFile(path.resolve(public_path, 'voicechat.html'));
     });
 
     const handleConnection = createConnectionHandler(byondPort, io);

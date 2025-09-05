@@ -1,20 +1,10 @@
 const net = require('net');
 
-/**
- * Ensures the topic data starts with '?'.
- * @param {string} data - The topic data to format.
- * @returns {string} - The formatted data.
- */
+
 function formatData(data) {
     return data.startsWith('?') ? data : `?${data}`;
 }
 
-/**
- * Constructs a BYOND topic packet buffer.
- * @param {string} data - The topic data to encode.
- * @returns {Buffer} - The packet buffer.
- * @throws {Error} If the data exceeds maximum size.
- */
 function buildPacket(data) {
     const formattedData = formatData(data);
     const dataLength = formattedData.length;
@@ -34,14 +24,6 @@ function buildPacket(data) {
     return Buffer.concat([header, queryBuffer, nullBuffer]);
 }
 
-/**
- * Sends a topic packet to a BYOND server.
- * @param {string} host - The server hostname or IP.
- * @param {number} port - The server port.
- * @param {string} data - The topic data to send.
- * @param {number} [timeout=5000] - Socket timeout in milliseconds.
- * @returns {Promise<void>} - Resolves when sent, rejects on error.
- */
 function sendByondTopic(host, port, data, timeout = 5000) {
     return new Promise((resolve, reject) => {
         if (typeof data !== 'string') {
@@ -70,11 +52,20 @@ function sendByondTopic(host, port, data, timeout = 5000) {
 
         client.connect(port, host, () => {
             client.write(packet, () => {
-                client.end(); // Close the connection after sending
+                client.end(); 
                 resolve();
             });
         });
     });
 }
 
-module.exports = { sendByondTopic };
+async function sendJSON(data, byondPort) {
+    const out = JSON.stringify(data);
+    try {
+        await sendByondTopic('127.0.0.1', byondPort, out);
+    } catch (err) {
+        console.error('Failed to send command:', err.message);
+    }
+}
+
+module.exports = { sendJSON };
