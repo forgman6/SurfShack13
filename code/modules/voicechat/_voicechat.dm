@@ -71,7 +71,7 @@ SUBSYSTEM_DEF(voicechat)
 	send_locations()
 
 //shit you want byond to do after establishing communication
-/datum/controller/subsystem/voicechat/proc/handshaked()
+/datum/controller/subsystem/voicechat/proc/handshake()
 	handshaked = TRUE
 	return
 
