@@ -26,6 +26,7 @@
 
 
 /datum/controller/subsystem/voicechat/proc/handle_topic(T, addr)
+	//sanity check
 	if(addr != "127.0.0.1")
 		return
 
@@ -39,7 +40,7 @@
 	#endif
 
 	if(data["server_ready"])
-		handshaked()
+		handshake()
 		return
 
 	if(data["pong"])

@@ -1,5 +1,6 @@
 // Connects a client to voice chat via an external browser
 /datum/controller/subsystem/voicechat/proc/join_vc(client/C)
+	var/node_port = CONFIG_GET(number/port_voicechat)
 	if(!C)
 		return
 	// Disconnect existing session if present

@@ -1,0 +1,5 @@
+##uncomment to enable voicechat
+ENABLE_VOICECHAT
+
+##what port to use for node connections. ensure this port is open.
+PORT_VOICECHAT 3000

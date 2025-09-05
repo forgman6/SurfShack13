@@ -1,5 +1,8 @@
 
 /mob/verb/join_vc()
+	if(!SSvoicechat || !SSvoicechat.handshaked)
+		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
+		return
 	src << browse({"
 	<html>
 	<h2>Experimental Proximity Chat</h2>
@@ -22,8 +25,8 @@
 	<img src='https://files.catbox.moe/mkz9tv.png>
 	</html>"}, "window=voicechat_help")
 
-	if(SSvoicechat)
-		SSvoicechat.join_vc(client)
+
+	SSvoicechat.join_vc(client)
 
 
 /mob/verb/mute_self()

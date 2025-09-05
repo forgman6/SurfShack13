@@ -629,6 +629,7 @@
 #include "code\controllers\configuration\entries\jobs.dm"
 #include "code\controllers\configuration\entries\lua.dm"
 #include "code\controllers\configuration\entries\resources.dm"
+#include "code\controllers\configuration\entries\voicechat_config.dm"
 #include "code\controllers\subsystem\achievements.dm"
 #include "code\controllers\subsystem\addiction.dm"
 #include "code\controllers\subsystem\admin_verbs.dm"

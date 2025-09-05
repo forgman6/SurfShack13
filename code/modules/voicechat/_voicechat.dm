@@ -33,8 +33,6 @@ SUBSYSTEM_DEF(voicechat)
 
 	//   --subsystem "defines"--
 
-	//which port to run the node websockets
-	var/const/node_port = 3000
 	//node server path
 	var/const/node_path = "voicechat/node/server/main.js"
 	//library path
@@ -45,6 +43,8 @@ SUBSYSTEM_DEF(voicechat)
 
 /datum/controller/subsystem/voicechat/Initialize()
 	. = ..()
+	if(!CONFIG_GET(flag/enable_voicechat))
+		return SS_INIT_NO_NEED
 	if(!test_library())
 		return SS_INIT_FAILURE
 	add_rooms(rooms_to_add)
@@ -55,7 +55,10 @@ SUBSYSTEM_DEF(voicechat)
 /datum/controller/subsystem/voicechat/proc/start_node()
 	// byond port used for topic calls
 	var/byond_port = world.port
-	spawn() shell("node [src.node_path] --node-port=[src.node_port] --byond-port=[byond_port]")
+	var/node_port = CONFIG_GET(number/port_voicechat)
+	if(!node_port)
+		CRASH("bad port option specified in config {node_port: [node_port || "null"]}")
+	spawn() shell("node [src.node_path] --node-port=[node_port] --byond-port=[byond_port]")
 
 
 /datum/controller/subsystem/voicechat/Del()
