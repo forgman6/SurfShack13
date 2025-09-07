@@ -15,17 +15,17 @@
 		return
 
 	// Open external browser with voice chat link
-    if(!show_link_only)
-        C << link(web_link)
-    else
-        C << browse({"
-        <html>
-            <body>
-                <h3>[web_link]</h3>
-                <p>copy and paste the link into your web browser of choice, or scan the qr code.</p>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent([web_link])}&size=150x150">
-            </body>
-        </html>"}, "window=voicechat_help")
+	if(!show_link_only)
+		C << link(web_link)
+	else
+		C << browse({"
+		<html>
+			<body>
+				<h3>[web_link]</h3>
+				<p>copy and paste the link into your web browser of choice, or scan the qr code.</p>
+				<img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent([web_link])}&size=150x150">
+			</body>
+		</html>"}, "window=voicechat_help")
 
 
 	send_json(alist(
