@@ -540,7 +540,7 @@ function setupUIListeners() {
     });
 
     // Buttons
-    // document.getElementById('mic').addEventListener('click', getMic);
+    document.getElementById('mic').addEventListener('click', getMic);
     document.getElementById('mute_toggle').addEventListener('click', () => toggleMute());
     document.getElementById('deafen_toggle').addEventListener('click', () => toggleDeafen());
     document.getElementById('settings_button').addEventListener('click', toggleSettings);
