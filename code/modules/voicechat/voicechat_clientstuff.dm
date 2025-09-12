@@ -15,6 +15,8 @@
 		return
 
 	// Open external browser with voice chat link
+	var/address = src.domain || world.internet_address
+	var/web_link = "https://[address]:[node_port]?sessionId=[sessionId]"
 	if(!show_link_only)
 		C << link(web_link)
 	else

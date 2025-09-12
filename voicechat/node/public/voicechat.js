@@ -287,8 +287,7 @@ function toggleDeafen(forceDeafen = false) {
 function startMicTestPlayback() {
     testAudioContext = new AudioContext();
     testSource = testAudioContext.createMediaStreamSource(localStream);
-    delayNode = testAudioContext.createDelay(4);
-    delayNode.delayTime = 4
+    delayNode = new DelayNode(testAudioContext, {delayTime:2})
     testSource.connect(delayNode);
     delayNode.connect(testAudioContext.destination);
 }

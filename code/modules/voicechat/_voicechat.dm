@@ -36,13 +36,21 @@ SUBSYSTEM_DEF(voicechat)
 	//node server path
 	var/const/node_path = "voicechat/node/server/main.js"
 	//library path
-	var/const/lib_path = "voicechat/pipes/byondsocket.so"
+	var/lib_path
+	var/const/lib_path_unix = "voicechat/pipes/unix/byondsocket"
+	var/const/lib_path_win = "voicechat/pipes/windows/byondsocket/Release/byondsocket"
 	//if you have a domain, put it here.
 	var/const/domain
+
 //  --lifecycle--
 
 /datum/controller/subsystem/voicechat/Initialize()
 	. = ..()
+	// world.OpenPort(1337)
+	if(world.system_type == MS_WINDOWS)
+		lib_path = lib_path_win
+	else
+		lib_path = lib_path_unix
 	if(!CONFIG_GET(flag/enable_voicechat))
 		return SS_INIT_NO_NEED
 	if(!test_library())
@@ -168,6 +176,12 @@ SUBSYSTEM_DEF(voicechat)
 		client_userCode_map.Remove(client_ref)
 		userCode_room_map.Remove(userCode)
 		vc_clients -= userCode
+
+
+	if(userCodes_speaking_icon[userCode])
+		var/client/C = locate(client_ref)
+		if(C && C.mob)
+			C.mob.cut_overlay(userCodes_speaking_icon[userCode])
 
 	if(from_byond)
 		send_json(alist(cmd= "disconnect", userCode= userCode))
