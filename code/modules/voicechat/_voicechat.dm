@@ -28,8 +28,6 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/rooms_to_add = list("living", "ghost")
 	//holds a normal list of all the ckeys and list of all usercodes that muted that ckey
 	var/list/ckey_muted_by = alist()
-	// if subsystem initialized
-	var/Initialized
 
 	//   --subsystem "defines"--
 
