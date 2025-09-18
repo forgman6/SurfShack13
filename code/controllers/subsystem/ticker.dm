@@ -706,6 +706,9 @@ SUBSYSTEM_DEF(ticker)
 	if(end_string)
 		end_state = end_string
 
+	if(SSvoicechat && SSvoicechat.initialized)
+		SSvoicechat.stop_node() // needs a new signal COMSIG_TICKER_SHUTDOWN/ROUND_END/REBOOT
+
 	log_game(span_boldannounce("Rebooting World. [reason]"))
 
 	world.Reboot()
