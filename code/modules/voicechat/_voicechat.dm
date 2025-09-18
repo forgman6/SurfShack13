@@ -72,13 +72,8 @@ SUBSYSTEM_DEF(voicechat)
 	stop_node()
 	. = ..()
 
-/datum/controller/subsystem/voicechat/qdel(datum/to_delete, force)
-	stop_node()
-	. = ..()
-
-/datum/controller/subsystem/voicechat/stop_node()
+/datum/controller/subsystem/voicechat/proc/stop_node()
 	send_json(alist(cmd= "stop_node"))
-	. = ..()
 
 // -- normal stuff--
 
