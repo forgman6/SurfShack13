@@ -68,7 +68,7 @@ SUBSYSTEM_DEF(voicechat)
 	spawn() shell("node [src.node_path] --node-port=[node_port] --byond-port=[byond_port]")
 
 
-/datum/controller/subsystem/voicechat/Del()
+/datum/controller/subsystem/voicechat/Shutdown()
 	stop_node()
 	. = ..()
 
