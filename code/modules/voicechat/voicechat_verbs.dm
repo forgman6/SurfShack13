@@ -1,6 +1,6 @@
 
 /mob/verb/join_vc()
-	if(!SSvoicechat || !SSvoicechat.handshaked)
+	if(!SSvoicechat || !SSvoicechat.Initialized)
 		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
 		return
 	src << browse({"
@@ -30,7 +30,7 @@
 	SSvoicechat.join_vc(client)
 
 /mob/verb/join_vc_external()
-	if(!SSvoicechat || !SSvoicechat.handshaked)
+	if(!SSvoicechat || !SSvoicechat.Initialized)
 		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
 		return
 

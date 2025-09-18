@@ -28,8 +28,8 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/rooms_to_add = list("living", "ghost")
 	//holds a normal list of all the ckeys and list of all usercodes that muted that ckey
 	var/list/ckey_muted_by = alist()
-	// if the server and node have successfully communicated
-	var/handshaked = FALSE
+	// if subsystem initialized
+	var/Initialized
 
 	//   --subsystem "defines"--
 
@@ -57,6 +57,7 @@ SUBSYSTEM_DEF(voicechat)
 		return SS_INIT_FAILURE
 	add_rooms(rooms_to_add)
 	start_node()
+	initialized = TRUE
 	return SS_INIT_SUCCESS
 
 
@@ -80,7 +81,7 @@ SUBSYSTEM_DEF(voicechat)
 
 //shit you want byond to do after establishing communication
 /datum/controller/subsystem/voicechat/proc/handshake()
-	handshaked = TRUE
+	// handshaked = TRUE
 	return
 
 /datum/controller/subsystem/voicechat/proc/add_rooms(list/rooms, zlevel_mode = FALSE)
@@ -141,22 +142,28 @@ SUBSYSTEM_DEF(voicechat)
 
 // faster the better
 /datum/controller/subsystem/voicechat/proc/send_locations()
-	var/list/params = alist(cmd = "loc")
+	var/list/params = list(cmd = "loc")
+	var/locs_sent = 0
+
 	for(var/userCode in vc_clients)
 		var/client/C = locate(userCode_client_map[userCode])
 		var/room =  userCode_room_map[userCode]
 		if(!C || !room)
 			continue
 		var/mob/M = C.mob
-		var/zlevel = M.z
-		if(!M || !zlevel)
+		if(!M)
 			continue
-		var/localroom = "[zlevel]_[room]"
+		var/turf/T = get_turf(M)
+		var/localroom = "[T.z]_[room]"
 		if(userCode in userCodes_active)
 			room_update(M)
 		if(!params[localroom])
-			params[localroom] = alist()
-		params[localroom][userCode] = list(M.x, M.y)
+			params[localroom] = list()
+		params[localroom][userCode] = list(T.x, T.y)
+		locs_sent ++
+
+	if(!locs_sent) //dont send empty packeys
+		return
 	send_json(params)
 
 

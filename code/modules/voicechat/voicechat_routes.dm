@@ -20,7 +20,7 @@
 /datum/controller/subsystem/voicechat/proc/send_json(list/data)
 	var/json = json_encode_sanitize(data)
 	#ifdef LOG_TRAFFIC
-	world.log << "BYOND: [json]"
+	message_admins("BYOND: [json]")
 	#endif
 	call_ext(src.lib_path, "byond:SendJSON")(json)
 
@@ -32,11 +32,11 @@
 
 	var/list/data = json_decode(T)
 	if(data["error"])
-		world.log << T
+		message_admins(T)
 		return
 
 	#ifdef LOG_TRAFFIC
-	world.log << "NODE: [T]"
+	message_admins("NODE: [T]")
 	#endif
 
 	if(data["server_ready"])
