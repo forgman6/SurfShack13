@@ -5,6 +5,11 @@ SUBSYSTEM_DEF(voicechat)
 	init_order = INIT_ORDER_VOICECHAT
 	runlevels = RUNLEVEL_GAME|RUNLEVEL_POSTGAME
 
+	//life cycle sanity shit, please dont touch
+	var/is_node_shutting_down = FALSE
+	//life cycle sanity shit, please dont touch
+	var/node_PID
+
 	//     --list shit--
 
 	//userCodes associated thats been fully confirmed - browser paired and mic perms on
@@ -28,7 +33,6 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/rooms_to_add = list("living", "ghost")
 	//holds a normal list of all the ckeys and list of all usercodes that muted that ckey
 	var/list/ckey_muted_by = alist()
-
 	//   --subsystem "defines"--
 
 	//node server path
@@ -44,7 +48,6 @@ SUBSYSTEM_DEF(voicechat)
 
 /datum/controller/subsystem/voicechat/Initialize()
 	. = ..()
-	// world.OpenPort(1337)
 	if(world.system_type == MS_WINDOWS)
 		lib_path = lib_path_win
 	else
@@ -60,29 +63,55 @@ SUBSYSTEM_DEF(voicechat)
 
 
 /datum/controller/subsystem/voicechat/proc/start_node()
-	// byond port used for topic calls
 	var/byond_port = world.port
 	var/node_port = CONFIG_GET(number/port_voicechat)
 	if(!node_port)
 		CRASH("bad port option specified in config {node_port: [node_port || "null"]}")
-	spawn() shell("node [src.node_path] --node-port=[node_port] --byond-port=[byond_port]")
+	var/cmd = "node [src.node_path] --node-port=[node_port] --byond-port=[byond_port] --byond-pid=[world.process] &"
+	if(world.system_type == MS_WINDOWS) // ape shit insane but its ok :)
+		cmd = "powershell.exe -Command \"Start-Process -FilePath 'node' -ArgumentList '[src.node_path]','--node-port=[node_port]','--byond-port=[byond_port]', '--byond-pid=[world.process]'\""
+	var/exit_code = shell(cmd)
+	if(exit_code != 0)
+		CRASH("launching node failed {exit_code: [exit_code || "null"], cmd: [cmd || "null"]}")
+
 
 
 /datum/controller/subsystem/voicechat/Shutdown()
 	stop_node()
 	. = ..()
 
+
 /datum/controller/subsystem/voicechat/proc/stop_node()
 	send_json(alist(cmd= "stop_node"))
+	addtimer(CALLBACK(src, PROC_REF(confirm_node_stopped), 1 SECONDS))
 
-// -- normal stuff--
+
+/datum/controller/subsystem/voicechat/proc/confirm_node_stopped()
+	if(is_node_shutting_down)
+		return
+
+	message_admins("node failed to shutdown, trying forcefully...")
+
+	if(!node_PID)
+		message_admins("cant find pid to shutdown node. hard restart required to fix voicechat")
+		return
+	var/cmd = "kill [node_PID]"
+	if(world.system_type == MS_WINDOWS)
+		cmd = "taskkill /F /PID [node_PID]"
+	var/exit_code = shell(cmd)
+
+	if(exit_code != 0)
+		message_admins("killing node failed {exit_code: [exit_code || "null"], cmd: [cmd || "null"]}")
+	else
+		message_admins("node shutdown")
 
 /datum/controller/subsystem/voicechat/fire()
 	send_locations()
 
-//shit you want byond to do after establishing communication
-/datum/controller/subsystem/voicechat/proc/handshake()
-	// handshaked = TRUE
+/datum/controller/subsystem/voicechat/proc/on_node_start(pid)
+	if(!pid || !isnum(pid))
+		CRASH("invalid pid {pid: [pid || "null"]}")
+	node_PID = pid
 	return
 
 /datum/controller/subsystem/voicechat/proc/add_rooms(list/rooms, zlevel_mode = FALSE)

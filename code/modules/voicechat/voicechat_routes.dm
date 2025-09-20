@@ -39,9 +39,10 @@
 	message_admins("NODE: [T]")
 	#endif
 
-	if(data["server_ready"])
-		handshake()
+	if(data["node_started"])
+		on_node_start(data["node_started"])
 		return
+
 
 	if(data["pong"])
 		world.log << "started: [data["time"]] round trip: [world.timeofday] approx: [world.timeofday -  data["time"]] x 1/10 seconds, data: [data["pong"]]"
@@ -56,3 +57,6 @@
 		return
 	if(data["disconnect"])
 		disconnect(userCode= data["disconnect"])
+
+	if(data["shutting_down"])
+		is_node_shutting_down = TRUE

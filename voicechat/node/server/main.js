@@ -8,7 +8,10 @@ const { sendJSON } = require('./byond/ByondCommunication.js');
 const argv = minimist(process.argv.slice(2));
 const byondPort = argv['byond-port']
 const nodePort = argv['node-port']
+const byondPID = argv['byond-pid']
+
 const shutdown_function = () => {
+    sendJSON({shutting_down: 1}, byondPort)
     disconnectAllClients(io);
     io.close(() => {
         wsServer.close(() => {
@@ -21,20 +24,19 @@ const shutdown_function = () => {
         });
     });
 };
-
-const originalParentPid = process.ppid;
+;
 
 function isParentRunning() {
     if (process.platform === 'win32') {
         try {
-            const output = execSync(`tasklist /FI "PID eq ${originalParentPid}"`).toString();
-            return output.includes(originalParentPid.toString());
+            const output = execSync(`tasklist /FI "PID eq ${byondPID}"`).toString();
+            return output.includes(byondPID.toString());
         } catch (e) {
             return false;
         }
     } else {
         try {
-            process.kill(originalParentPid, 0);
+            process.kill(byondPID, 0);
             return true;
         } catch (e) {
             return false;
@@ -47,7 +49,7 @@ function monitorParentProcess(shutdown_function) {
         if (!isParentRunning()) {
             console.log('Parent process terminated, shutting down Node.js server');
             shutdown_function();
-            
+
         }
     }, 10000); // 10 seconds
 }
@@ -58,7 +60,8 @@ monitorParentProcess(shutdown_function);
 // Start servers
 const { io, server: wsServer } = startWebSocketServer(byondPort, nodePort);
 const ByondServer = startByondServer(byondPort, io, shutdown_function);
-sendJSON({ server_ready: 1 }, byondPort);
-
+setTimeout(() => {
+    sendJSON({ 'node_started': process.pid }, byondPort);
+}, 3000);
 process.on('SIGTERM', () => shutdown_function())
 process.on('SIGINT', () => shutdown_function())
