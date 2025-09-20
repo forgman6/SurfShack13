@@ -1,6 +1,6 @@
 
 /mob/verb/join_vc()
-	if(!SSvoicechat || !SSvoicechat.initialized)
+	if(!SSvoicechat || !SSvoicechat.initialized || !SSvoicechat.node_PID)
 		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
 		return
 	src << browse({"
@@ -30,7 +30,7 @@
 	SSvoicechat.join_vc(client)
 
 /mob/verb/join_vc_external()
-	if(!SSvoicechat || !SSvoicechat.initialized)
+	if(!SSvoicechat || !SSvoicechat.initialized || !SSvoicechat.node_PID)
 		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
 		return
 
@@ -46,3 +46,8 @@
 /mob/verb/deafen()
 	if(SSvoicechat)
 		SSvoicechat.mute_mic(client, deafen=TRUE)
+
+
+ADMIN_VERB(restart_voicechat, R_SERVER, "Restart Voicechat", "Disconnects voicechat clients and restarts voicechat", ADMIN_CATEGORY_SERVER)
+	if(SSvoicechat)
+		SSvoicechat.restart()

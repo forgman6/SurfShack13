@@ -59,7 +59,6 @@
 	var/client/C = locate(userCode_client_map[userCode])
 
 	if(!C || !C.mob)
-		disconnect(userCode, from_byond= TRUE)
 		return
 	var/mob/M = C.mob
 	if(!userCodes_speaking_icon[userCode])

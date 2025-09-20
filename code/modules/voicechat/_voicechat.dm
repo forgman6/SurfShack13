@@ -61,6 +61,12 @@ SUBSYSTEM_DEF(voicechat)
 	initialized = TRUE
 	return SS_INIT_SUCCESS
 
+	send_ooc_announcement("Voicechat restarting in a few seconds, please reconnect with join_vc")
+	disconnect_all_clients()
+	stop_node()
+	addtimer(CALLBACK(src, PROC_REF(start_node), 1.1 SECONDS))
+	is_node_shutting_down = FALSE
+
 
 /datum/controller/subsystem/voicechat/proc/start_node()
 	var/byond_port = world.port
@@ -73,12 +79,18 @@ SUBSYSTEM_DEF(voicechat)
 	var/exit_code = shell(cmd)
 	if(exit_code != 0)
 		CRASH("launching node failed {exit_code: [exit_code || "null"], cmd: [cmd || "null"]}")
-
+	else
+		return TRUE
 
 
 /datum/controller/subsystem/voicechat/Shutdown()
+	disconnect_all_clients()
 	stop_node()
 	. = ..()
+
+/datum/controller/subsystem/voicechat/proc/disconnect_all_clients()
+	for(var/userCode in vc_clients)
+		disconnect(userCode, from_byond = TRUE)
 
 
 /datum/controller/subsystem/voicechat/proc/stop_node()
