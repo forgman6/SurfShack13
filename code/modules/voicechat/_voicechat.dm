@@ -61,6 +61,7 @@ SUBSYSTEM_DEF(voicechat)
 	initialized = TRUE
 	return SS_INIT_SUCCESS
 
+/datum/controller/subsystem/voicechat/proc/restart()
 	send_ooc_announcement("Voicechat restarting in a few seconds, please reconnect with join_vc")
 	disconnect_all_clients()
 	stop_node()
