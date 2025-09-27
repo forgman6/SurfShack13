@@ -66,10 +66,9 @@ SUBSYSTEM_DEF(voicechat)
 	disconnect_all_clients()
 	stop_node()
 	addtimer(CALLBACK(src, PROC_REF(start_node), 1.1 SECONDS))
-	is_node_shutting_down = FALSE
-
 
 /datum/controller/subsystem/voicechat/proc/start_node()
+	is_node_shutting_down = FALSE
 	var/byond_port = world.port
 	var/node_port = CONFIG_GET(number/port_voicechat)
 	if(!node_port)

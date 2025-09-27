@@ -1,7 +1,7 @@
 
 /mob/verb/join_vc()
 	set name = "Join"
-	set category = "Voicechat"
+	set category = "ProxChat"
 	if(!SSvoicechat || !SSvoicechat.initialized || !SSvoicechat.node_PID)
 		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
 		return
@@ -9,7 +9,7 @@
 
 /mob/verb/join_with_url()
 	set name = "Join with URL"
-	set category = "Voicechat"
+	set category = "ProxChat"
 	if(!SSvoicechat || !SSvoicechat.initialized || !SSvoicechat.node_PID)
 		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
 		return
@@ -19,7 +19,7 @@
 
 /mob/verb/help_voicechat()
 	set name = "Help"
-	set category = "Voicechat"
+	set category = "ProxChat"
 	src << browse({"
 	<html>
 		<h2>Experimental Proximity Chat</h2>
@@ -76,7 +76,7 @@
 
 /mob/verb/mute_self()
 	set name = "Mute"
-	set category = "Voicechat"
+	set category = "ProxChat"
 	if(!SSvoicechat)
 		return
 	SSvoicechat.mute_mic(client)
@@ -84,14 +84,14 @@
 
 /mob/verb/deafen()
 	set name = "Deafen"
-	set category = "Voicechat"
+	set category = "ProxChat"
 	if(!SSvoicechat)
 		return
 	SSvoicechat.mute_mic(client, deafen=TRUE)
 
 /mob/verb/leave()
 	set name = "Leave"
-	set category = "Voicechat"
+	set category = "ProxChat"
 	if(!SSvoicechat)
 		return
 	var/userCode = SSvoicechat.client_userCode_map[ref(client)]
@@ -101,6 +101,10 @@
 	SSvoicechat.disconnect(userCode, from_byond=TRUE)
 	to_chat(src, span_ooc("Disconnected, make sure to close the tab"))
 
-ADMIN_VERB(restart_voicechat, R_SERVER, "Restart Voicechat", "Disconnects voicechat clients and restarts voicechat", ADMIN_CATEGORY_SERVER)
+ADMIN_VERB(restart_voicechat, R_ADMIN, "Restart Voicechat", "Disconnects voicechat clients and restarts voicechat", ADMIN_CATEGORY_SERVER)
 	if(SSvoicechat)
 		SSvoicechat.restart()
+
+ADMIN_VERB(stop_voicechat, R_ADMIN, "Stop Voicechat", "disconnects voicechat clients and stops voicechat", ADMIN_CATEGORY_SERVER)
+	if(SSvoicechat)
+		SSvoicechat.Shutdown()
