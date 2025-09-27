@@ -86,6 +86,7 @@ SUBSYSTEM_DEF(voicechat)
 /datum/controller/subsystem/voicechat/Shutdown()
 	disconnect_all_clients()
 	stop_node()
+	send_ooc_announcement("voicechat stopped")
 	. = ..()
 
 /datum/controller/subsystem/voicechat/proc/disconnect_all_clients()
