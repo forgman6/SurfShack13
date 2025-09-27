@@ -1322,11 +1322,6 @@
 	icon_state = "shirt_black"
 	gender = NEUTER
 
-/datum/sprite_accessory/undershirt/shirt_black_symbol
-	name = "Shirt (Symbol Shirt)"
-	icon_state = "shirt_symbol"
-	gender = NEUTER
-
 /datum/sprite_accessory/undershirt/blueshirt
 	name = "Shirt (Blue)"
 	icon_state = "shirt_blue"
@@ -1566,10 +1561,6 @@
 
 // please make sure they're sorted alphabetically and categorized
 
-/datum/sprite_accessory/socks/ace_knee
-	name = "Knee-high (Ace)"
-	icon_state = "ace_knee"
-
 /datum/sprite_accessory/socks/bee_knee
 	name = "Knee-high (Bee)"
 	icon_state = "bee_knee"
@@ -1597,10 +1588,6 @@
 /datum/sprite_accessory/socks/thin_knee
 	name = "Knee-high (Thin)"
 	icon_state = "thin_knee"
-
-/datum/sprite_accessory/socks/trans_knee
-	name = "Knee-high (Trans)"
-	icon_state = "trans_knee"
 
 /datum/sprite_accessory/socks/uk_knee
 	name = "Knee-High (UK)"
@@ -1670,10 +1657,6 @@
 	name = "Stockings (Fishnet)"
 	icon_state = "fishnet_full"
 
-/datum/sprite_accessory/socks/ace_thigh
-	name = "Thigh-high (Ace)"
-	icon_state = "ace_thigh"
-
 /datum/sprite_accessory/socks/bee_thigh
 	name = "Thigh-high (Bee)"
 	icon_state = "bee_thigh"
@@ -1701,10 +1684,6 @@
 /datum/sprite_accessory/socks/thin_thigh
 	name = "Thigh-high (Thin)"
 	icon_state = "thin_thigh"
-
-/datum/sprite_accessory/socks/trans_thigh
-	name = "Thigh-high (Trans)"
-	icon_state = "trans_thigh"
 
 /datum/sprite_accessory/socks/uk_thigh
 	name = "Thigh-high (UK)"
