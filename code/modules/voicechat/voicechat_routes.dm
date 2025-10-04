@@ -40,7 +40,7 @@
 	#endif
 
 	if(data["node_started"])
-		on_node_start(data["node_started"])
+		on_node_start()
 		return
 
 
@@ -57,6 +57,3 @@
 		return
 	if(data["disconnect"])
 		disconnect(userCode= data["disconnect"])
-
-	if(data["shutting_down"])
-		is_node_shutting_down = TRUE

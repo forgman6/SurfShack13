@@ -1,6 +1,6 @@
 const { execSync } = require('child_process');
 const minimist = require('minimist');
-
+const fs = require('fs')
 const { startWebSocketServer, disconnectAllClients } = require('./client/websocketServer.js');
 const { startByondServer } = require('./byond/ByondServer.js');
 const { sendJSON } = require('./byond/ByondCommunication.js');
@@ -10,8 +10,10 @@ const byondPort = argv['byond-port']
 const nodePort = argv['node-port']
 const byondPID = argv['byond-pid']
 
+const nodePidPath = 'data/node.pid'
+
 const shutdown_function = () => {
-    sendJSON({shutting_down: 1}, byondPort)
+    fs.unlinkSync(nodePidPath)
     disconnectAllClients(io);
     io.close(() => {
         wsServer.close(() => {
@@ -60,8 +62,8 @@ monitorParentProcess(shutdown_function);
 // Start servers
 const { io, server: wsServer } = startWebSocketServer(byondPort, nodePort);
 const ByondServer = startByondServer(byondPort, io, shutdown_function);
-setTimeout(() => {
-    sendJSON({ 'node_started': process.pid }, byondPort);
-}, 3000);
+fs.writeFileSync(nodePidPath, process.pid.toString());
+
+
 process.on('SIGTERM', () => shutdown_function())
 process.on('SIGINT', () => shutdown_function())

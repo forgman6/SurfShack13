@@ -2,7 +2,7 @@
 /mob/verb/join_vc()
 	set name = "Join"
 	set category = "ProxChat"
-	if(!SSvoicechat || !SSvoicechat.initialized || !SSvoicechat.node_PID)
+	if(!SSvoicechat || !SSvoicechat.initialized)
 		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
 		return
 	SSvoicechat.join_vc(client)
@@ -10,7 +10,7 @@
 /mob/verb/join_with_url()
 	set name = "Join with URL"
 	set category = "ProxChat"
-	if(!SSvoicechat || !SSvoicechat.initialized || !SSvoicechat.node_PID)
+	if(!SSvoicechat || !SSvoicechat.initialized)
 		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
 		return
 
@@ -101,10 +101,12 @@
 	SSvoicechat.disconnect(userCode, from_byond=TRUE)
 	to_chat(src, span_ooc("Disconnected, make sure to close the tab"))
 
-ADMIN_VERB(restart_voicechat, R_ADMIN, "Restart Voicechat", "Disconnects voicechat clients and restarts voicechat", ADMIN_CATEGORY_SERVER)
+ADMIN_VERB(restart_voicechat, R_ADMIN, "Restart Voicechat", "Disconnects voicechat clients and restarts voicechat", "ProxChat.Admin")
 	if(SSvoicechat)
 		SSvoicechat.restart()
+	else
+		to_chat(src, span_admin("voicechat subsystem not initialized, cant start"))
 
-ADMIN_VERB(stop_voicechat, R_ADMIN, "Stop Voicechat", "disconnects voicechat clients and stops voicechat", ADMIN_CATEGORY_SERVER)
+ADMIN_VERB(stop_voicechat, R_ADMIN, "Stop Voicechat", "disconnects voicechat clients and stops voicechat", "ProxChat.Admin")
 	if(SSvoicechat)
 		SSvoicechat.Shutdown()
