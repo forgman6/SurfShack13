@@ -39,6 +39,7 @@ function disconnectAllClients(io) {
         io.sockets.sockets.forEach((socket) => {
             socket.emit('update', { type: 'update', data: 'Disconnected: Disconnecting all clients' });
             socket.disconnect(true);
+            revokeCredential(sessionId);
         });
     }, 2000);
 }

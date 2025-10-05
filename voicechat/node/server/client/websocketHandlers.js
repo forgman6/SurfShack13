@@ -1,6 +1,6 @@
 const { sessionIdToUserCode, userCodeToSocketId, socketIdToUserCode} = require('../state');
 const { sendJSON } = require('../byond/ByondCommunication');
-
+const { createCredential, revokeCredential} = require('../turn')
 function createConnectionHandler(byondPort, io) {
     return function handleConnection(socket) {
         console.log('A user connected:', socket.id);
@@ -12,14 +12,14 @@ function createConnectionHandler(byondPort, io) {
                 socket.disconnect()
             }
         }, 5000);
-
         socket.on('join', (data) => {
             const sessionId = data.sessionId;
             const userCode = sessionIdToUserCode.get(sessionId);
             if (userCode) {
                 // Clear the timer on successful auth
                 clearTimeout(authTimer);
-
+                // create turn crediential
+                createCredential(sessionId);
                 // Avoid re-associating if already set (edge case for multiple 'join' emits)
                 if (!socket.userCode) {
                     userCodeToSocketId.set(userCode, socket.id);
@@ -32,14 +32,15 @@ function createConnectionHandler(byondPort, io) {
                 }
             } else {
                 console.log('Invalid sessionId', sessionId);
-                socket.emit('update', { type: 'status', data: 'Disconnected: bad sessionId >:(' });
+                socket.emit('update', { type: 'status', data: 'Disconnected: bad sessionId. make sure you use the verb to connect as you need a new link each time.' });
                 socket.disconnect();
+                revokeCredential(sessionId);
             }
-        });    
+        });
         socket.on('mic_access_granted', () => {
             const userCode = socketIdToUserCode.get(socket.id);
             if(userCode) sendJSON({ 'confirmed': userCode }, byondPort);
-        })    
+        })
         socket.on('disconnect_page', () => {
             const userCode = socketIdToUserCode.get(socket.id);
             if (userCode) {
@@ -51,6 +52,7 @@ function createConnectionHandler(byondPort, io) {
             socket.emit('update', { type: 'status', data: 'Disconnecting...'});
             socket.disconnect();
             console.log('User disconnected:', socket.id);
+            revokeCredential(sessionId);
         });
 
         socket.on('offer', (data) => {

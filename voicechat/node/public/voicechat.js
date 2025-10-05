@@ -1,7 +1,5 @@
 // Constants and Configuration
-const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-];
+
 const DEFAULT_VOLUME_THRESHOLD = 0.01;
 const VAD_DEBOUNCE_TIME = 200; // ms
 const GAIN_SCALE_FACTOR = 50; // Slider 0-100 maps to gain 0-2
@@ -36,6 +34,16 @@ const sessionId = urlParams.get('sessionId');
 
 // Extract ip from url
 const address = window.location.host;
+
+const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: `turn:${window.location.hostname}:3478`,
+        credential: sessionId,
+        username: sessionId,
+    }
+]
 
 // Utility Functions
 function toggleButton(buttonId, isActive) {
