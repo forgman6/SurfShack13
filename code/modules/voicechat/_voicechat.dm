@@ -25,7 +25,7 @@ SUBSYSTEM_DEF(voicechat)
 	// each speaker per userCode
 	var/list/userCodes_speaking_icon = alist()
 	//list of all rooms to add at round start
-	var/list/rooms_to_add = list("living", "ghost")
+	var/list/rooms_to_add = list("living", "ghost", "lobby_noprox")
 	//holds a normal list of all the ckeys and list of all usercodes that muted that ckey
 	var/list/ckey_muted_by = alist()
 	//   --subsystem "defines"--
@@ -52,18 +52,19 @@ SUBSYSTEM_DEF(voicechat)
 	if(!test_library())
 		return SS_INIT_FAILURE
 	add_rooms(rooms_to_add)
+	world.OpenPort(1337)
 	start_node()
 	initialized = TRUE
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/voicechat/proc/restart()
-	send_ooc_announcement("Voicechat restarting in a few seconds, please reconnect with join_vc")
+	send_ooc_announcement("Voicechat restarting in a few seconds, please reconnect with join")
 	disconnect_all_clients()
 	stop_node()
-	addtimer(CALLBACK(src, PROC_REF(start_node), 1.1 SECONDS))
+	addtimer(CALLBACK(src, PROC_REF(start_node), 2 SECONDS))
 
 /datum/controller/subsystem/voicechat/proc/start_node()
-	var/byond_port = world.port
+	var/byond_port = 1337
 	var/node_port = CONFIG_GET(number/port_voicechat)
 	if(!node_port)
 		CRASH("bad port option specified in config {node_port: [node_port || "null"]}")
@@ -150,6 +151,9 @@ SUBSYSTEM_DEF(voicechat)
 	userCode_room_map[userCode] = room
 	current_rooms[room] += userCode
 
+	//for lobby chat
+	if(SSticker.current_state < GAME_STATE_PLAYING)
+		send_locations()
 
 /datum/controller/subsystem/voicechat/proc/link_userCode_client(userCode, client)
 	if(!client|| !userCode)
@@ -159,20 +163,6 @@ SUBSYSTEM_DEF(voicechat)
 	userCode_client_map[userCode] = client_ref
 	client_userCode_map[client_ref] = userCode
 	world.log << "registered userCode:[userCode] to client_ref:[client_ref]"
-
-
-// Confirms userCode when browser and mic access are granted
-/datum/controller/subsystem/voicechat/proc/confirm_userCode(userCode)
-	if(!userCode || (userCode in vc_clients))
-		return
-	var/client_ref = userCode_client_map[userCode]
-	if(!client_ref)
-		return
-
-	vc_clients += userCode
-	log_world("Voice chat confirmed for userCode: [userCode]")
-	post_confirm(userCode)
-
 
 // faster the better
 /datum/controller/subsystem/voicechat/proc/send_locations()
@@ -190,7 +180,7 @@ SUBSYSTEM_DEF(voicechat)
 		var/turf/T = get_turf(M)
 		var/localroom = "[T.z]_[room]"
 		if(userCode in userCodes_active)
-			room_update(M)
+			room_update(C)
 		if(!params[localroom])
 			params[localroom] = list()
 		params[localroom][userCode] = list(T.x, T.y)
@@ -201,31 +191,7 @@ SUBSYSTEM_DEF(voicechat)
 	send_json(params)
 
 
-// Disconnects a user from voice chat
-/datum/controller/subsystem/voicechat/proc/disconnect(userCode, from_byond = FALSE)
-	if(!userCode)
-		return
 
-	toggle_active(userCode, FALSE)
-	var/room = userCode_room_map[userCode]
-	if(room)
-		current_rooms[room] -= userCode
-
-	var/client_ref = userCode_client_map[userCode]
-	if(client_ref)
-		userCode_client_map.Remove(userCode)
-		client_userCode_map.Remove(client_ref)
-		userCode_room_map.Remove(userCode)
-		vc_clients -= userCode
-
-
-	if(userCodes_speaking_icon[userCode])
-		var/client/C = locate(client_ref)
-		if(C && C.mob)
-			C.mob.cut_overlay(userCodes_speaking_icon[userCode])
-
-	if(from_byond)
-		send_json(alist(cmd= "disconnect", userCode= userCode))
 
 
 /datum/controller/subsystem/voicechat/proc/generate_userCode(client/C)
@@ -239,20 +205,4 @@ SUBSYSTEM_DEF(voicechat)
 	return .
 
 
-// Updates the voice chat room based on mob status
-// this needs to be moved to signals at some point
-/datum/controller/subsystem/voicechat/proc/room_update(mob/source)
-	var/client/C = source.client
-	var/userCode = client_userCode_map[ref(C)]
-	if(!C || !userCode)
-		return
-	var/room
-	switch(source.stat)
-		if(CONSCIOUS to SOFT_CRIT)
-			room = "living"
-		if(UNCONSCIOUS to HARD_CRIT)
-			room = null
-		else
-			room = "ghost"
-	if(userCode_room_map[userCode] != room)
-		move_userCode_to_room(userCode, room)
+
