@@ -52,7 +52,6 @@ SUBSYSTEM_DEF(voicechat)
 	if(!test_library())
 		return SS_INIT_FAILURE
 	add_rooms(rooms_to_add)
-	world.OpenPort(1337)
 	start_node()
 	initialized = TRUE
 	return SS_INIT_SUCCESS
