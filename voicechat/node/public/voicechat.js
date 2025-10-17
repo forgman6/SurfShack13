@@ -496,6 +496,7 @@ function setupSocketHandlers() {
         console.log('Server is shutting down. Cleaning up...');
         cleanupConnections();
         updateStatus('Server shutting down. Connection closed.');
+		window.location.href = "https://surfshack13.net"
         toggleRoomStatus(false);
     });
 
