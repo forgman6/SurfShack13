@@ -4,7 +4,7 @@
 	if(!C)
 		return
 	// Disconnect existing session if present
-	var/existing_userCode = client_userCode_map[ref(C)]
+	var/existing_userCode = client_userCode_map[C]
 	if(existing_userCode)
 		disconnect(existing_userCode, from_byond = TRUE)
 
@@ -37,8 +37,8 @@
 	))
 
 	// Link client to userCode
-	userCode_client_map[userCode] = ref(C)
-	client_userCode_map[ref(C)] = userCode
+	userCode_client_map[userCode] = C
+	client_userCode_map[C] = userCode
 	// Confirmation handled in confirm_usekrCode
 
 
@@ -46,73 +46,152 @@
 /datum/controller/subsystem/voicechat/proc/confirm_userCode(userCode)
 	if(!userCode || (userCode in vc_clients))
 		return
-	var/client_ref = userCode_client_map[userCode]
-	if(!client_ref)
+	var/client/C = userCode_client_map[userCode]
+	var/mob/M = C.mob
+	if(!C || !M)
+		disconnect(userCode)
 		return
+	mob_client_map[M] = C
 
 	vc_clients += userCode
-	log_world("Voice chat confirmed for userCode: [userCode]")
-	post_confirm(userCode)
+	register_mob_signals(M)
+	check_mob_conditions(M)
 
 
-// Sets up signals for a confirmed voice chat user
-/datum/controller/subsystem/voicechat/proc/post_confirm(userCode)
-	var/client/C = locate(userCode_client_map[userCode])
-	if(!C)
-		disconnect(userCode, from_byond = TRUE)
+/datum/controller/subsystem/voicechat/proc/register_mob_signals(mob/M)
+	SIGNAL_HANDLER
+	RegisterSignal(M, COMSIG_MOB_LOGOUT, PROC_REF(mob_changed))
+
+
+	if(isliving(M))
+		RegisterSignals(M, list(\
+			SIGNAL_ADDTRAIT(TRAIT_KNOCKEDOUT),
+			SIGNAL_ADDTRAIT(TRAIT_DEAF),
+			SIGNAL_ADDTRAIT(TRAIT_MUTE),
+			SIGNAL_ADDTRAIT(TRAIT_MIMING),
+			), PROC_REF(clear_from_room))
+		RegisterSignals(M, list(\
+			SIGNAL_REMOVETRAIT(TRAIT_KNOCKEDOUT),
+			SIGNAL_REMOVETRAIT(TRAIT_DEAF),
+			SIGNAL_REMOVETRAIT(TRAIT_MUTE),
+			SIGNAL_REMOVETRAIT(TRAIT_MIMING)
+			), PROC_REF(add_to_room))
+		RegisterSignal(M, COMSIG_LIVING_DEATH, PROC_REF(on_mob_death))
+		RegisterSignal(M, COMSIG_LIVING_REVIVE, PROC_REF(on_mob_revive))
+/datum/controller/subsystem/voicechat/proc/mob_changed(mob/M)
+	var/client/C = mob_client_map[M]
+	var/mob/new_mob = C.mob
+	if(!C || !new_mob)
 		return
 
-	room_update(C)
+	mob_client_map.Remove(M)
+	mob_client_map[new_mob] = C
+	unregister_mob_signals(M)
+
+	register_mob_signals(new_mob)
+	check_mob_conditions(new_mob)
+
+/datum/controller/subsystem/voicechat/proc/unregister_mob_signals(mob/M)
+	UnregisterSignal(M, COMSIG_MOB_LOGOUT)
+	if(isliving(M))
+		UnregisterSignal(M, list(\
+			SIGNAL_ADDTRAIT(TRAIT_KNOCKEDOUT),
+			SIGNAL_ADDTRAIT(TRAIT_DEAF),
+			SIGNAL_ADDTRAIT(TRAIT_MUTE),
+			SIGNAL_ADDTRAIT(TRAIT_MIMING),
+			SIGNAL_REMOVETRAIT(TRAIT_KNOCKEDOUT),
+			SIGNAL_REMOVETRAIT(TRAIT_DEAF),
+			SIGNAL_REMOVETRAIT(TRAIT_MUTE),
+			SIGNAL_REMOVETRAIT(TRAIT_MIMING),
+			COMSIG_LIVING_DEATH,
+			COMSIG_LIVING_REVIVE,
+		))
 
 
-// Updates the voice chat room based on mob status
-// this needs to be moved to signals at some point
-/datum/controller/subsystem/voicechat/proc/room_update(client/C)
-	var/userCode = client_userCode_map[ref(C)]
+/datum/controller/subsystem/voicechat/proc/clear_from_room(mob/M)
+	SIGNAL_HANDLER
+	if(!M)
+		CRASH("signal called without user {usr: [usr || "null"]}")
+	var/client/C = M.client
+	var/userCode = client_userCode_map[C]
 	if(!C || !userCode)
 		return
+	clear_userCode(userCode)
+
+/datum/controller/subsystem/voicechat/proc/add_to_room(mob/M)
+	SIGNAL_HANDLER
+	if(!M)
+		CRASH("signal called without user {usr: [usr || "null"]}")
+	var/client/C = M.client
+	var/userCode = client_userCode_map[C]
+	if(!C || !userCode)
+		return
+	move_userCode_to_room(userCode, "living")
+
+/datum/controller/subsystem/voicechat/proc/on_mob_death(mob/M)
+	SIGNAL_HANDLER
+	check_mob_conditions(M)
+
+/datum/controller/subsystem/voicechat/proc/on_mob_revive(mob/M)
+	SIGNAL_HANDLER
+	check_mob_conditions(M)
+
+
+/datum/controller/subsystem/voicechat/proc/check_mob_conditions(mob/M)
+	if(!M)
+		return
+
+	var/client/C = M.client
+	var/userCode = client_userCode_map[C]
+
+	if(!C || !userCode)
+		return
+
 	var/room
-	if(!C.mob || isnewplayer(C.mob))
+	if(isnewplayer(M))
 		room = "lobby_noprox"
-	else
-		var/mob/M = C.mob
-		switch(M.stat)
-			if(CONSCIOUS to SOFT_CRIT)
-				room = "living"
-			if(UNCONSCIOUS to HARD_CRIT)
-				room = null
-			else
-				room = "ghost"
-	if(userCode_room_map[userCode] != room)
+
+	else if(isdead(M) || M.stat == DEAD)
+		room = "ghost"
+
+	else if(isliving(M))
+		if(HAS_TRAIT(M, TRAIT_KNOCKEDOUT) || HAS_TRAIT(M, TRAIT_DEAF)|| HAS_TRAIT(M, TRAIT_MUTE) || HAS_TRAIT(M, TRAIT_MIMING))
+			clear_from_room(M)
+		else
+			room = "living"
+
+	if(room || userCode_room_map[userCode] != room)
 		move_userCode_to_room(userCode, room)
+	//for lobby chat
+	if(SSticker.current_state < GAME_STATE_PLAYING)
+		send_locations()
 
 
 // Disconnects a user from voice chat
 /datum/controller/subsystem/voicechat/proc/disconnect(userCode, from_byond = FALSE)
 	if(!userCode)
 		return
-
 	toggle_active(userCode, FALSE)
-	var/room = userCode_room_map[userCode]
-	if(room)
-		current_rooms[room] -= userCode
+	clear_userCode(userCode)
 
-	var/client_ref = userCode_client_map[userCode]
-	if(client_ref)
+	var/client/C = userCode_client_map[userCode]
+	if(C)
 		userCode_client_map.Remove(userCode)
-		client_userCode_map.Remove(client_ref)
+		client_userCode_map.Remove(C)
 		userCode_room_map.Remove(userCode)
 		vc_clients -= userCode
 
+	var/mob/M = C.mob
 
 	if(userCodes_speaking_icon[userCode])
-		var/client/C = locate(client_ref)
-		if(C && C.mob)
-			C.mob.cut_overlay(userCodes_speaking_icon[userCode])
+		if(C && M)
+			M.cut_overlay(userCodes_speaking_icon[userCode])
+			unregister_mob_signals(M)
 
 	if(from_byond)
 		send_json(alist(cmd= "disconnect", userCode= userCode))
 	//for lobby chat
+
 	if(SSticker.current_state < GAME_STATE_PLAYING)
 		send_locations()
 
@@ -122,7 +201,7 @@
 /datum/controller/subsystem/voicechat/proc/toggle_active(userCode, is_active)
 	if(!userCode || isnull(is_active))
 		return
-	var/client/C = locate(userCode_client_map[userCode])
+	var/client/C = userCode_client_map[userCode]
 
 	if(!C || !C.mob)
 		return
@@ -138,8 +217,8 @@
 		if(old_mob)
 			old_mob.overlays -= speaker
 		userCode_mob_map[userCode] = M
-		room_update(C)
-	if(is_active && (isobserver(M) || !M.stat))
+	var/room = userCode_room_map[userCode]
+	if(is_active && room)
 		userCodes_active |= userCode
 		M.add_overlay(speaker)
 	else
@@ -151,7 +230,7 @@
 /datum/controller/subsystem/voicechat/proc/mute_mic(client/C, deafen = FALSE)
 	if(!C)
 		return
-	var/userCode = client_userCode_map[ref(C)]
+	var/userCode = client_userCode_map[C]
 	if(!userCode)
 		return
 	send_json(list(

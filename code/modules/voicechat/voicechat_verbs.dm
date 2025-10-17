@@ -94,7 +94,7 @@
 	set category = "ProxChat"
 	if(!SSvoicechat)
 		return
-	var/userCode = SSvoicechat.client_userCode_map[ref(client)]
+	var/userCode = SSvoicechat.client_userCode_map[client]
 	if(!userCode)
 		to_chat(src, span_ooc("No connection found, make sure to close the tab"))
 		return
