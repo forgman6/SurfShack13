@@ -62,6 +62,12 @@ SUBSYSTEM_DEF(voicechat)
 	stop_node()
 	addtimer(CALLBACK(src, PROC_REF(start_node), 2 SECONDS))
 
+/datum/controller/subsystem/voicechat/proc/on_ice_failed(userCode)
+	if(!userCode)
+		CRASH("ice_failed error without usercode {userCode: [userCode || "null"]")
+	var/client/C = userCode_client_map[userCode]
+	message_admins("voicechat peer connection failed for [C || userCode]")
+
 /datum/controller/subsystem/voicechat/proc/start_node()
 	var/byond_port = world.port
 	var/node_port = CONFIG_GET(number/port_voicechat)

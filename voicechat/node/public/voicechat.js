@@ -36,13 +36,13 @@ const sessionId = urlParams.get('sessionId');
 const address = window.location.host;
 
 const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: `turn:${window.location.hostname}:3478`,
-        credential: sessionId,
-        username: sessionId,
-    }
+    // { urls: 'stun:stun.l.google.com:19302' },
+    // { urls: 'stun:stun1.l.google.com:19302' },
+    // { urls: 'stun:stun2.l.google.com:19302' },
+    // { urls: `turn:${window.location.hostname}:3478`,
+    //     credential: sessionId,
+    //     username: sessionId,
+    // }
 ]
 
 // Utility Functions
@@ -179,7 +179,6 @@ function updateVolumes() {
         else {
             audio.volume = 0;
         }
-        // console.log(`volume ${vol}`)
     });
 }
 
@@ -352,9 +351,6 @@ function createPeerConnection(userCode, sendOffer) {
     }
 
     let iceCandidates = [];
-    let reconnectAttempts = 0;
-    const maxReconnectAttempts = 5;
-    const reconnectDelay = 500; // 0.5 seconds
 
     pc.onicecandidate = (event) => {
         if (event.candidate) {
@@ -362,40 +358,15 @@ function createPeerConnection(userCode, sendOffer) {
             socket.emit('ice-candidate', { to: userCode, candidate: event.candidate });
         }
     };
-
     pc.oniceconnectionstatechange = () => {
         const state = pc.iceConnectionState;
-        console.log(`ICE connection state for ${userCode}: ${state}`);
-        if (state === 'failed' && reconnectAttempts < maxReconnectAttempts) {
-            console.log(`Reconnecting to ${userCode}, attempt ${reconnectAttempts + 1}`);
-            reconnectAttempts++;
-            setTimeout(() => {
-                // Clean up existing connection
-                pc.close();
-                peerConnections.delete(userCode);
-                audioElements.get(userCode)?.remove();
-                audioElements.delete(userCode);
-                audioSenders.delete(userCode);
-
-                // Create new connection
-                const newPc = createPeerConnection(userCode, sendOffer);
-                // Re-send any stored ICE candidates
-                iceCandidates.forEach(candidate => {
-                    socket.emit('ice-candidate', { to: userCode, candidate });
-                });
-            }, reconnectDelay);
-        } else if (state === 'failed') {
-            console.error(`Max reconnect attempts reached for ${userCode}`);
-            // Optionally notify user of persistent failure
-            updateStatus(`Failed to reconnect to ${userCode} after ${maxReconnectAttempts} attempts. See console.og, and about:webrtc for details`);
-        } else if (state === 'connected' || state === 'completed') {
-            reconnectAttempts = 0; // Reset attempts on successful connection
+        if (state === 'failed') {
+            socket.emit('ice_failed')
+            updateStatus('a peer connection failed, view console error for more info')
         }
     };
-
     pc.ontrack = (event) => {
         audio.srcObject = event.streams[0];
-        console.log(`Receiving audio from ${userCode}`);
     };
 
     if (sendOffer) {
@@ -435,7 +406,6 @@ function setupSocketHandlers() {
     });
 
     socket.on('loc', (data) => {
-        console.log(data)
         if (data.none === 1) {
             Array.from(peerConnections.keys()).forEach(removePeer);
             toggleRoomStatus(false);
@@ -463,7 +433,6 @@ function setupSocketHandlers() {
 
     socket.on('offer', (data) => {
         const { from, offer } = data;
-        console.log(`Received offer from ${from}`);
         const pc = peerConnections.get(from) || createPeerConnection(from, false);
         pc.setRemoteDescription(new RTCSessionDescription(offer))
             .then(() => pc.createAnswer())
@@ -474,7 +443,6 @@ function setupSocketHandlers() {
 
     socket.on('answer', (data) => {
         const { from, answer } = data;
-        console.log(`Received answer from ${from}`);
         const pc = peerConnections.get(from);
         if (pc) {
             pc.setRemoteDescription(new RTCSessionDescription(answer))
@@ -484,7 +452,6 @@ function setupSocketHandlers() {
 
     socket.on('ice-candidate', (data) => {
         const { from, candidate } = data;
-        console.log(`Received ICE candidate from ${from}`);
         const pc = peerConnections.get(from);
         if (pc) {
             pc.addIceCandidate(new RTCIceCandidate(candidate))
@@ -493,7 +460,6 @@ function setupSocketHandlers() {
     });
 
     socket.on('server-shutdown', () => {
-        console.log('Server is shutting down. Cleaning up...');
         cleanupConnections();
         updateStatus('Server shutting down. Connection closed.');
 		window.location.href = "https://surfshack13.net"
@@ -501,7 +467,6 @@ function setupSocketHandlers() {
     });
 
     socket.on('disconnect', (reason) => {
-        console.log(`Socket disconnected: ${reason}`);
         cleanupConnections();
         toggleRoomStatus(false);
     });

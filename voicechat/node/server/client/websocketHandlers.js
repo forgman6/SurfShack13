@@ -81,7 +81,11 @@ function createConnectionHandler(byondPort, io) {
                 socket_sending.emit('ice-candidate', { from: socket.userCode, candidate });
             }
         });
-
+        socket.on('ice_failed', (event) => {
+            const userCode = socketIdToUserCode.get(socket.id);
+            console.log(event)
+            if(userCode) sendJSON({ 'ice_failed': userCode}, byondPort);
+        }),
         socket.on('voice_activity', (data) => {
             const userCode = socketIdToUserCode.get(socket.id); //ack
             sendJSON({voice_activity: userCode, active: data['active']}, byondPort)

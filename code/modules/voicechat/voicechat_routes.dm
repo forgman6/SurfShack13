@@ -55,5 +55,10 @@
 	if(data["voice_activity"])
 		toggle_active(data["voice_activity"], data["active"])
 		return
+
 	if(data["disconnect"])
 		disconnect(userCode= data["disconnect"])
+
+	if(data["ice_failed"])
+		on_ice_failed(userCode=data["ice_failed"])
+		return
