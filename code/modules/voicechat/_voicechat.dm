@@ -33,8 +33,6 @@ SUBSYSTEM_DEF(voicechat)
 	//if you have a domain, put it here.
 	var/const/domain
 
-//  --lifecycle--
-
 /datum/controller/subsystem/voicechat/Initialize()
 	. = ..()
 
