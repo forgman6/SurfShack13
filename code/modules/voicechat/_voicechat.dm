@@ -12,6 +12,7 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/client_userCode_map = alist()
 	//change with add_rooms and remove_rooms.
 	var/list/current_rooms = alist()
+	var/list/room_has_proximity = alist()
 	// usercode to room
 	var/list/userCode_room_map = alist()
 	// usercode to mob only really used for the overlays
@@ -22,8 +23,10 @@ SUBSYSTEM_DEF(voicechat)
 	var/list/userCodes_active = list()
 	// each speaker per userCode
 	var/list/userCodes_speaking_icon = alist()
-	//list of all rooms to add at round start
-	var/list/rooms_to_add = list("living", "ghost", "lobby_noprox")
+	/// list of rooms to add at round start with normal proximity
+	var/list/rooms_to_add = list("living", "ghost")
+	/// list of all rooms to add at round start without proximity
+	var/list/rooms_to_add_without_proximity = list("lobby")
 	//holds a normal list of all the ckeys and list of all usercodes that muted that ckey
 	var/list/ckey_muted_by = alist()
 	//node server path
@@ -44,6 +47,7 @@ SUBSYSTEM_DEF(voicechat)
 		return SS_INIT_FAILURE
 
 	add_rooms(rooms_to_add)
+	add_rooms(rooms_to_add_without_proximity, proximity_mode = FALSE)
 	start_node()
 	initialized = TRUE
 
@@ -126,15 +130,15 @@ SUBSYSTEM_DEF(voicechat)
 /datum/controller/subsystem/voicechat/proc/on_node_start()
 	return
 
-/datum/controller/subsystem/voicechat/proc/add_rooms(list/rooms, zlevel_mode = FALSE)
+/datum/controller/subsystem/voicechat/proc/add_rooms(list/rooms, proximity_mode = TRUE)
 	if(!islist(rooms))
 		rooms = list(rooms)
 	rooms.Remove(current_rooms) //remove existing rooms
 	for(var/room in rooms)
-		if(isnum(room) && !zlevel_mode)
-			// CRASH("rooms cannot be numbers {room: [room]}")
+		if(isnum(room))
 			continue
 		current_rooms[room] = list()
+		room_has_proximity[room] = proximity_mode
 
 
 /datum/controller/subsystem/voicechat/proc/remove_rooms(list/rooms)
@@ -145,6 +149,7 @@ SUBSYSTEM_DEF(voicechat)
 		for(var/userCode in current_rooms[room])
 			userCode_room_map[userCode] = null
 		current_rooms.Remove(room)
+		room_has_proximity.Remove(room)
 
 /// remove user from room
 /datum/controller/subsystem/voicechat/proc/clear_userCode(userCode)
@@ -188,11 +193,18 @@ SUBSYSTEM_DEF(voicechat)
 		var/mob/M = C.mob
 		if(!M)
 			continue
-		var/turf/T = get_turf(M)
-		var/localroom = "[T.z]_[room]"
-		if(!params[localroom])
-			params[localroom] = list()
-		params[localroom][userCode] = list(T.x, T.y)
+		if(room_has_proximity[room])
+			var/turf/T = get_turf(M)
+			var/localroom = "[T.z]_[room]"
+			if(!params[localroom])
+				params[localroom] = list()
+			params[localroom][userCode] = list(T.x, T.y)
+		else
+			var/room_noprox = room + "_noprox"
+			if(!params[room_noprox])
+				params[room_noprox] = list()
+			params[room_noprox][userCode] = list(1, 1)
+
 		locs_sent ++
 
 	if(!locs_sent) //dont send empty packets
