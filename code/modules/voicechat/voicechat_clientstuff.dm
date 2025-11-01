@@ -61,6 +61,8 @@
 /datum/controller/subsystem/voicechat/proc/register_mob_signals(mob/M)
 	SIGNAL_HANDLER
 	RegisterSignal(M, COMSIG_MOB_LOGOUT, PROC_REF(mob_changed))
+
+
 	if(isliving(M))
 		RegisterSignals(M, list(\
 			SIGNAL_ADDTRAIT(TRAIT_KNOCKEDOUT),
@@ -76,14 +78,10 @@
 			), PROC_REF(add_to_room))
 		RegisterSignal(M, COMSIG_LIVING_DEATH, PROC_REF(on_mob_death))
 		RegisterSignal(M, COMSIG_LIVING_REVIVE, PROC_REF(on_mob_revive))
-
 /datum/controller/subsystem/voicechat/proc/mob_changed(mob/M)
 	var/client/C = mob_client_map[M]
 	var/mob/new_mob = C.mob
-	if(!C || !new_mob) // player probably disconnected
-		var/usercode = userCode_client_map[c]
-		if(usercode)
-			disconnect(usercode, from_byond = TRUE)
+	if(!C || !new_mob)
 		return
 
 	mob_client_map.Remove(M)
