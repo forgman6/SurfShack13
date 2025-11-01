@@ -56,6 +56,7 @@
 	vc_clients += userCode
 	register_mob_signals(M)
 	check_mob_conditions(M)
+	RegisterSignal(C, COMSIG_QDELETING, PROC_REF(on_client_leaving_game))
 
 
 /datum/controller/subsystem/voicechat/proc/register_mob_signals(mob/M)
@@ -170,6 +171,12 @@
 	if(SSticker.current_state < GAME_STATE_PLAYING)
 		send_locations()
 
+/datum/controller/subsystem/voicechat/proc/on_client_leaving_game(client/C)
+	var/userCode = client_userCode_map[C]
+	if(!userCode)
+		message_admins("disconnecting voicechat user didnt work. {client : [C || "null"], userCode: [userCode || "null"]}")
+		return
+	disconnect(userCode, from_byond = TRUE)
 
 // Disconnects a user from voice chat
 /datum/controller/subsystem/voicechat/proc/disconnect(userCode, from_byond = FALSE)
