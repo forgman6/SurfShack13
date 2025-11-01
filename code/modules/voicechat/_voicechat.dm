@@ -46,6 +46,8 @@ SUBSYSTEM_DEF(voicechat)
 	add_rooms(rooms_to_add)
 	start_node()
 	initialized = TRUE
+
+	RegisterSignal(SSticker, COMSIG_TICKER_ROUND_ENDED, PROC_REF(on_round_end)) //moves everyone to no prox room at round end.
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/voicechat/proc/set_lib_path()
@@ -163,7 +165,7 @@ SUBSYSTEM_DEF(voicechat)
 
 	userCode_room_map[userCode] = room
 	current_rooms[room] += userCode
-	// message_admins("move to room worked room [userCode_room_map[userCode] || "null"]")
+	message_admins("move to room worked {room: [userCode_room_map[userCode] || "null"]}")
 
 
 /datum/controller/subsystem/voicechat/proc/link_userCode_client(userCode, client)
@@ -197,6 +199,10 @@ SUBSYSTEM_DEF(voicechat)
 		return
 	send_json(params)
 
+
+/datum/controller/subsystem/voicechat/proc/on_round_end()
+	for(var/userCode in vc_clients)
+		move_userCode_to_room(userCode, "lobby_noprox")
 
 /datum/controller/subsystem/voicechat/proc/generate_userCode(client/C)
 	if(!C)

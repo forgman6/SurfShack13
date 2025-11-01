@@ -147,8 +147,12 @@
 	if(!C || !userCode)
 		return
 
+
+
 	var/room
-	if(isnewplayer(M))
+
+	// everyone goes to no prox to yell at each other at round end.
+	if(isnewplayer(M) || SSticker.current_state == GAME_STATE_FINISHED)
 		room = "lobby_noprox"
 
 	else if(isdead(M) || M.stat == DEAD)
@@ -162,7 +166,7 @@
 
 	if(room || userCode_room_map[userCode] != room)
 		move_userCode_to_room(userCode, room)
-	//for lobby chat
+	//for lobby chat as ticker isnt intialized.
 	if(SSticker.current_state < GAME_STATE_PLAYING)
 		send_locations()
 
@@ -218,7 +222,7 @@
 			old_mob.overlays -= speaker
 		userCode_mob_map[userCode] = M
 	var/room = userCode_room_map[userCode]
-	if(is_active && room)
+	if(is_active && room && !M.stat)
 		userCodes_active |= userCode
 		M.add_overlay(speaker)
 	else
