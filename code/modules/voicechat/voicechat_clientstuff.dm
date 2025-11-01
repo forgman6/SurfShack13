@@ -154,7 +154,7 @@
 
 	// everyone goes to no prox to yell at each other at round end.
 	if(isnewplayer(M) || SSticker.current_state == GAME_STATE_FINISHED)
-		room = "lobby_noprox"
+		room = "lobby"
 
 	else if(isdead(M) || M.stat == DEAD)
 		room = "ghost"
@@ -165,11 +165,11 @@
 		else
 			room = "living"
 
-	if(room || userCode_room_map[userCode] != room)
+	if(room && userCode_room_map[userCode] != room)
 		move_userCode_to_room(userCode, room)
-	//for lobby chat as ticker isnt intialized.
-	if(SSticker.current_state < GAME_STATE_PLAYING)
-		send_locations()
+		//for lobby chat as ticker isnt intialized.
+		if(SSticker.current_state < GAME_STATE_PLAYING)
+			send_locations()
 
 /datum/controller/subsystem/voicechat/proc/on_client_leaving_game(client/C)
 	var/userCode = client_userCode_map[C]

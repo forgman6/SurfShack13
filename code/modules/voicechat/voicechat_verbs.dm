@@ -3,7 +3,7 @@
 	set name = "Join"
 	set category = "ProxChat"
 	if(!SSvoicechat || !SSvoicechat.initialized)
-		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
+		to_chat(src, span_ooc("voicechat disabled"))
 		return
 	SSvoicechat.join_vc(client)
 
@@ -11,7 +11,7 @@
 	set name = "Join with URL"
 	set category = "ProxChat"
 	if(!SSvoicechat || !SSvoicechat.initialized)
-		to_chat(src, span_ooc("voicechat either not initialized yet, broken, or turned off"))
+		to_chat(src, span_ooc("voicechat disabled"))
 		return
 
 	if(SSvoicechat)
@@ -99,7 +99,7 @@
 		to_chat(src, span_ooc("No connection found, make sure to close the tab"))
 		return
 	SSvoicechat.disconnect(userCode, from_byond=TRUE)
-	to_chat(src, span_ooc("Disconnected, make sure to close the tab"))
+	to_chat(src, span_ooc("Disconnected"))
 
 ADMIN_VERB(restart_voicechat, R_ADMIN, "Restart Voicechat", "Disconnects voicechat clients and restarts voicechat", "ProxChat.Admin")
 	if(SSvoicechat)

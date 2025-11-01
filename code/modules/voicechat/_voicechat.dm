@@ -44,6 +44,7 @@ SUBSYSTEM_DEF(voicechat)
 
 	set_lib_path()
 	if(!test_library())
+		message_admins("library test failed cant start voicechat")
 		return SS_INIT_FAILURE
 
 	add_rooms(rooms_to_add)
@@ -66,7 +67,7 @@ SUBSYSTEM_DEF(voicechat)
 	send_ooc_announcement("Voicechat restarting in a few seconds, please reconnect with join")
 	disconnect_all_clients()
 	stop_node()
-	addtimer(CALLBACK(src, PROC_REF(start_node), 2 SECONDS))
+	addtimer(CALLBACK(src, PROC_REF(start_node), 4 SECONDS))
 
 /datum/controller/subsystem/voicechat/proc/on_ice_failed(userCode)
 	if(!userCode)
@@ -102,7 +103,7 @@ SUBSYSTEM_DEF(voicechat)
 
 /datum/controller/subsystem/voicechat/proc/stop_node()
 	send_json(alist(cmd= "stop_node"))
-	addtimer(CALLBACK(src, PROC_REF(ensure_node_stopped), 1 SECONDS))
+	addtimer(CALLBACK(src, PROC_REF(ensure_node_stopped), 3 SECONDS))
 
 
 /datum/controller/subsystem/voicechat/proc/ensure_node_stopped()
@@ -214,7 +215,7 @@ SUBSYSTEM_DEF(voicechat)
 
 /datum/controller/subsystem/voicechat/proc/on_round_end()
 	for(var/userCode in vc_clients)
-		move_userCode_to_room(userCode, "lobby_noprox")
+		move_userCode_to_room(userCode, "lobby")
 
 /datum/controller/subsystem/voicechat/proc/generate_userCode(client/C)
 	if(!C)
