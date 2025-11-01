@@ -81,7 +81,7 @@
 	var/client/C = mob_client_map[M]
 	var/mob/new_mob = C.mob
 	if(!C || !new_mob) // player probably disconnected
-		var/usercode = userCode_client_map[C]
+		var/usercode = userCode_client_map[c]
 		if(usercode)
 			disconnect(usercode, from_byond = TRUE)
 		return
