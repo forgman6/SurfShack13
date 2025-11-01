@@ -49,7 +49,7 @@
 	var/client/C = userCode_client_map[userCode]
 	var/mob/M = C.mob
 	if(!C || !M)
-		disconnect(userCode)
+		orphaned_usercodes = TRUE
 		return
 	mob_client_map[M] = C
 
@@ -80,10 +80,8 @@
 /datum/controller/subsystem/voicechat/proc/mob_changed(mob/M)
 	var/client/C = mob_client_map[M]
 	var/mob/new_mob = C.mob
-	if(!C || !new_mob) // player probably disconnected
-		var/usercode = userCode_client_map[C]
-		if(usercode)
-			disconnect(usercode, from_byond = TRUE)
+	if(!C || !new_mob) // player disconnected
+		orphaned_usercodes = TRUE
 		return
 
 	mob_client_map.Remove(M)
@@ -117,6 +115,7 @@
 	var/client/C = M.client
 	var/userCode = client_userCode_map[C]
 	if(!C || !userCode)
+		orphaned_usercodes = TRUE
 		return
 	clear_userCode(userCode)
 
@@ -127,6 +126,7 @@
 	var/client/C = M.client
 	var/userCode = client_userCode_map[C]
 	if(!C || !userCode)
+		orphaned_usercodes = TRUE
 		return
 	move_userCode_to_room(userCode, "living")
 
@@ -147,6 +147,7 @@
 	var/userCode = client_userCode_map[C]
 
 	if(!C || !userCode)
+		orphaned_usercodes = TRUE
 		return
 
 
@@ -210,6 +211,7 @@
 	var/client/C = userCode_client_map[userCode]
 
 	if(!C || !C.mob)
+		orphaned_usercodes = TRUE
 		return
 	var/mob/M = C.mob
 	if(!userCodes_speaking_icon[userCode])
@@ -231,10 +233,10 @@
 		userCodes_active -= userCode
 		M.cut_overlay(speaker)
 
-
 // Mutes or deafens a user's microphone
 /datum/controller/subsystem/voicechat/proc/mute_mic(client/C, deafen = FALSE)
 	if(!C)
+		orphaned_usercodes = TRUE
 		return
 	var/userCode = client_userCode_map[C]
 	if(!userCode)

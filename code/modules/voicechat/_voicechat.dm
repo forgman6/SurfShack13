@@ -10,6 +10,8 @@ SUBSYSTEM_DEF(voicechat)
 	//userCode to clientRef
 	var/list/userCode_client_map = alist()
 	var/list/client_userCode_map = alist()
+	// set high when a client is gone, which happens when people log out.
+	var/orphaned_usercodes = FALSE
 	//change with add_rooms and remove_rooms.
 	var/list/current_rooms = alist()
 	// usercode to room
@@ -122,6 +124,14 @@ SUBSYSTEM_DEF(voicechat)
 
 /datum/controller/subsystem/voicechat/fire()
 	send_locations()
+	if(orphaned_usercodes)
+		for(var/userCode in vc_clients)
+			if(userCode_client_map[userCode])
+				continue
+			else
+				disconnect(userCode, from_byond = TRUE)
+		orphaned_usercodes = FALSE
+
 
 /datum/controller/subsystem/voicechat/proc/on_node_start()
 	return
